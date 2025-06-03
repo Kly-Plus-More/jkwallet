@@ -19,7 +19,7 @@ export default function RootLayout() {
         SplashScreen.hideAsync();
       }, 500);
     }
-  }, [loaded]);
+    }, [loaded]);
 
   if (!loaded) {
     return null;
