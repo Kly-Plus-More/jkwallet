@@ -1,207 +1,258 @@
-import { FontAwesome } from '@expo/vector-icons';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Calendar } from 'react-native-calendars';
 
 export default function Dashboard() {
-  const transactions = [
-    { id: '1', category: 'Food', amount: -45.50, date: '2023-06-15' },
-    { id: '2', category: 'Salary', amount: +2500.00, date: '2023-06-01' },
-    { id: '3', category: 'Transport', amount: -30.00, date: '2023-06-10' },
+  const router = useRouter();
+  const [darkMode, setDarkMode] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+
+  // Add to existing data
+  const walletMetrics = [
+    { id: '1', title: 'Total Assets', value: '$12,450', change: '+2.4%', icon: 'wallet' },
+    { id: '2', title: 'Investment', value: '$4,230', change: '+1.2%', icon: 'chart-line' },
+    { id: '3', title: 'Crypto', value: '0.54 BTC', change: '-0.8%', icon: 'bitcoin' },
   ];
 
-  // const chartData = [
-  //   { name: 'Income', amount: 3200, color: '#4CAF50' },
-  //   { name: 'Expenses', amount: 1920, color: '#F44336' },
-  // ];
-
   return (
-    // <LinearGradient colors={['#f5f7fa', '#c3cfe2']} style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>JK Wallet</Text>
-          <FontAwesome name="bell" size={24} color="#4a90e2" />
+    <LinearGradient colors={darkMode ? ['#0f0f0f', '#1a1a1a'] : ['#f5f7fa', '#c3cfe2']} style={styles.container}>
+      {/* Enhanced Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <MaterialCommunityIcons name="wallet" size={32} color="#4a90e2" />
+          <Text style={[styles.title, darkMode && styles.darkText]}>JK Wallet</Text>
         </View>
-
-        {/* Balance Card */}
-        <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>Current Balance</Text>
-          <Text style={styles.balanceAmount}>$5,280.50</Text>
-          
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Income</Text>
-              <Text style={[styles.statValue, styles.income]}>+$3,200</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Expenses</Text>
-              <Text style={[styles.statValue, styles.expense]}>-$1,920</Text>
-            </View>
-          </View>
+        <View style={styles.headerRight}>
+          <TouchableOpacity style={styles.themeToggle} onPress={() => setDarkMode(!darkMode)}>
+            <MaterialCommunityIcons 
+              name={darkMode ? 'weather-night' : 'white-balance-sunny'} 
+              size={24} 
+              color={darkMode ? '#fff' : '#4a90e2'} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.aiButton} onPress={() => router.push('/ai')}>
+            <MaterialCommunityIcons name="robot" size={24} color={darkMode ? '#fff' : '#4a90e2'} />
+          </TouchableOpacity>
         </View>
+      </View>
 
-        {/* Chart */}
-        {/* <View style={styles.chartContainer}>
-          // In the PieChart component
-          <PieChart
-            data={chartData}
-            width={300}
-            height={220} // Increased from 120
-            chartConfig={{
-              backgroundColor: '#f5f7fa', // Changed from white
-              decimalPlaces: 0,
-            }}
-            accessor="amount"
-            backgroundColor="transparent"
-            paddingLeft="15" // Changed from string to number
-            absolute
-          />
-        </View> */}
-
-        {/* Recent Transactions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          {transactions.map((transaction) => (
-            <View key={transaction.id} style={styles.transactionItem}>
-              <FontAwesome 
-                name={transaction.amount > 0 ? 'arrow-up' : 'arrow-down'} 
-                size={20} 
-                color={transaction.amount > 0 ? '#4CAF50' : '#F44336'} 
-              />
-              <View style={styles.transactionInfo}>
-                <Text style={styles.transactionCategory}>{transaction.category}</Text>
-                <Text style={styles.transactionDate}>{transaction.date}</Text>
-              </View>
-              <Text style={[
-                styles.transactionAmount,
-                transaction.amount > 0 ? styles.income : styles.expense
-              ]}>
-                ${Math.abs(transaction.amount).toFixed(2)}
-              </Text>
-            </View>
-          ))}
-        </View>
+      {/* Wallet Metrics */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.metricsContainer}>
+        {walletMetrics.map((metric) => (
+          <LinearGradient
+            key={metric.id}
+            colors={darkMode ? ['#2a2a2a', '#1a1a1a'] : ['#fff', '#f8f9fa']}
+            style={[styles.metricCard, darkMode && styles.darkCard]}
+          >
+            {/* <MaterialCommunityIcons 
+              name={metric.icon} 
+              size={24} 
+              color={metric.change.startsWith('+') ? '#4cd964' : '#F44336'} 
+            /> */}
+            <Text style={[styles.metricTitle, darkMode && styles.darkText]}>{metric.title}</Text>
+            <Text style={styles.metricValue}>{metric.value}</Text>
+            <Text style={[
+              styles.metricChange ,
+              // metric.change.startsWith('+') ? styles.positive : styles.negative
+            ]}>
+              {metric.change}
+            </Text>
+          </LinearGradient>
+        ))}
       </ScrollView>
-);
+
+      {/* Enhanced Balance Card */}
+      <LinearGradient colors={['#4a90e2', '#2a5298']} style={styles.balanceCard}>
+        <View style={styles.balanceHeader}>
+          <Text style={styles.balanceLabel}>Total Balance</Text>
+          <TouchableOpacity onPress={() => router.push}>
+            <Text style={styles.viewDetails}>View Details</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.balanceAmount}>$5,280.50</Text>
+        
+        {/* Add Financial Health Indicator */}
+        <View style={styles.healthIndicator}>
+          <Text style={styles.healthText}>Financial Health: Excellent</Text>
+          <MaterialCommunityIcons name="heart-pulse" size={20} color="#4cd964" />
+        </View>
+      </LinearGradient>
+
+      {/* Interactive Tabs */}
+      <View style={[styles.tabContainer, darkMode && styles.darkTabContainer]}>
+        {['overview', 'analytics', 'markets'].map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tabButton, activeTab === tab && styles.activeTab]}
+            onPress={() => setActiveTab(tab)}
+          >
+            <Text style={[styles.tabText, darkMode && styles.darkText]}>
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Enhanced Calendar */}
+      <Calendar
+        style={[styles.calendar, darkMode && styles.darkCalendar]}
+        theme={{
+          ...(darkMode ? {
+            backgroundColor: '#1a1a1a',
+            calendarBackground: '#1a1a1a',
+            textSectionTitleColor: '#888',
+            selectedDayBackgroundColor: '#4a90e2',
+            selectedDayTextColor: '#fff',
+            todayTextColor: '#4cd964',
+            dayTextColor: '#fff',
+          } : {})
+        }}
+      />
+
+      {/* Rest of the components with dark mode styles ... */}
+    </LinearGradient>
+  );
 }
 
-      {/* Floating Action Button */}
-      // <TouchableOpacity style={styles.fab}>
-      //   <FontAwesome name="plus" size={24} color="white" />
-      // </TouchableOpacity>
-    // </LinearGradient>
-  
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 16,
+    backgroundColor: '#f5f7fa',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
   },
+  languageButton: {
+    marginLeft: 12,
+    backgroundColor: '#4a90e210',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+// from here and up
+  aiButton: {
+    backgroundColor: '#4a90e210',
+    padding: 8,
+    borderRadius: 20,
+  },
+
   balanceCard: {
-    backgroundColor: 'white',
-    borderRadius: 15,
+    backgroundColor: '#4a90e2',
+    borderRadius: 16,
     padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+    marginBottom: 16,
   },
   balanceLabel: {
     fontSize: 16,
-    color: '#666',
-    marginBottom: 5,
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 8,
   },
   balanceAmount: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
+    color: '#fff',
+    marginBottom: 16,
   },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+ 
+
+  calendar: {
+    borderRadius: 12,
+    marginTop: 8,
   },
-  statItem: {
-    flex: 1,
+
+  // Add new styles
+  darkText: {
+    color: '#fff',
   },
-  statLabel: {
-    fontSize: 14,
-    color: '#666',
+  darkCard: {
+    backgroundColor: '#2a2a2a',
+    shadowColor: '#000',
   },
-  statValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  metricsContainer: {
+    marginBottom: 16,
   },
-  income: {
-    color: '#4CAF50',
-  },
-  expense: {
-    color: '#F44336',
-  },
-  chartContainer: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 20,
-  },
-  section: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 15,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
-  },
-  transactionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  transactionInfo: {
-    flex: 1,
-    marginLeft: 15,
-  },
-  transactionCategory: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  transactionDate: {
-    fontSize: 14,
-    color: '#666',
-  },
-  transactionAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-    backgroundColor: '#4a90e2',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+  metricCard: {
+    width: 160,
+    padding: 16,
+    borderRadius: 16,
+    marginRight: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 5,
+    elevation: 3,
   },
+  metricTitle: {
+    fontSize: 14,
+    color: '#666',
+    marginVertical: 8,
+  },
+  metricValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  metricChange: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  healthIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    padding: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 12,
+  },
+  healthText: {
+    color: '#fff',
+    marginRight: 8,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    marginBottom: 16,
+  },
+  darkTabContainer: {
+    backgroundColor: '#2a2a2a',
+  },
+  tabButton: {
+    flex: 1,
+    padding: 16,
+    alignItems: 'center',
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#4a90e2',
+  },
+  darkCalendar: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
+  },
+  themeToggle: {},
+balanceHeader: {},
+viewDetails: {},
+tabText: {},
 });

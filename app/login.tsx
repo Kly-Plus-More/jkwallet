@@ -18,105 +18,94 @@ export default function Login() {
 
   return (
     <LinearGradient colors={['#1e3c72', '#2a5298']} style={styles.container}>
-      <View style={styles.header}>
+      <View style={styles.content}>
         <View style={styles.logoContainer}>
           {/* <FontAwesome name="wallet" size={50} color="#4cd964" /> */}
         </View>
-        <Text style={styles.title}>Welcome to JK Wallet</Text>
-        <Text style={styles.subtitle}>Sign in to manage your finances</Text>
-      </View>
-
-      <View style={styles.formContainer}>
-        {/* Email Input */}
-        <View style={[styles.inputGroup, isEmailFocused && styles.inputFocused]}>
-          <FontAwesome name="envelope" size={18} color="#4cd964" style={styles.icon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#aaa"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            onFocus={() => setIsEmailFocused(true)}
-            onBlur={() => setIsEmailFocused(false)}
-          />
-        </View>
-
-        {/* Password Input */}
-        <View style={[styles.inputGroup, isPasswordFocused && styles.inputFocused]}>
-          <FontAwesome name="lock" size={18} color="#4cd964" style={styles.icon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="#aaa"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            onFocus={() => setIsPasswordFocused(true)}
-            onBlur={() => setIsPasswordFocused(false)}
-          />
-          <TouchableOpacity 
-            style={styles.eyeIcon} 
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <FontAwesome 
-              name={showPassword ? 'eye-slash' : 'eye'} 
-              size={20} 
-              color="#4cd964" 
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Login Button */}
-        <TouchableOpacity 
-          style={styles.loginButton} 
-          onPress={handleLogin}
-          activeOpacity={0.9}
-        >
-          <LinearGradient
-            colors={['#4cd964', '#2ecc71']}
-            style={styles.gradient}
-          >
-            <Text style={styles.buttonText}>Sign In</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-
-        {/* Additional Options */}
-        <View style={styles.optionsContainer}>
-          <TouchableOpacity>
-            <Text style={styles.forgotPassword}>Forgot Password?</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Sign Up Section */}
-        <View style={styles.signupContainer}>
-          <Text style={styles.signupText}>Don't have an account?</Text>
-          <TouchableOpacity 
-            style={styles.signupButton}
-            onPress={() => router.push('/registration')}
-          >
-            <Text style={styles.signupButtonText}>Create Account</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Social Login */}
-        <View style={styles.socialLoginContainer}>
-          <View style={styles.divider} />
-          <Text style={styles.socialText}>Or continue with</Text>
-          <View style={styles.divider} />
-        </View>
         
-        <View style={styles.socialIconsContainer}>
-          <TouchableOpacity style={styles.socialIcon}>
-            <FontAwesome name="google" size={24} color="#fff" />
+        <Text style={styles.title}>Welcome Back</Text>
+        <Text style={styles.subtitle}>Sign in to your account</Text>
+
+        <View style={styles.formContainer}>
+          {/* Email Input */}
+          <View style={[styles.inputContainer, isEmailFocused && styles.inputFocused]}>
+            <Text style={styles.inputLabel}>Email Address</Text>
+            <View style={styles.inputWrapper}>
+              <FontAwesome name="envelope" size={16} color="#4cd964" />
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your email"
+                placeholderTextColor="#aaa"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                onFocus={() => setIsEmailFocused(true)}
+                onBlur={() => setIsEmailFocused(false)}
+              />
+            </View>
+          </View>
+
+          {/* Password Input */}
+          <View style={[styles.inputContainer, isPasswordFocused && styles.inputFocused]}>
+            <Text style={styles.inputLabel}>Password</Text>
+            <View style={styles.inputWrapper}>
+              <FontAwesome name="lock" size={16} color="#4cd964" />
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your password"
+                placeholderTextColor="#aaa"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                onFocus={() => setIsPasswordFocused(true)}
+                onBlur={() => setIsPasswordFocused(false)}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <FontAwesome 
+                  name={showPassword ? 'eye-slash' : 'eye'} 
+                  size={18} 
+                  color="#4cd964" 
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.forgotPassword}>
+            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.socialIcon}>
-            <FontAwesome name="apple" size={24} color="#fff" />
+
+          <TouchableOpacity 
+            style={styles.primaryButton}
+            onPress={handleLogin}
+          >
+            <Text style={styles.primaryButtonText}>Sign In</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.socialIcon}>
-            <FontAwesome name="facebook" size={24} color="#fff" />
-          </TouchableOpacity>
+
+          <View style={styles.dividerContainer}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or continue with</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <View style={styles.socialButtonsContainer}>
+            <TouchableOpacity style={styles.socialButton}>
+              <FontAwesome name="google" size={20} color="#DB4437" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialButton}>
+              <FontAwesome name="apple" size={20} color="#000" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialButton}>
+              <FontAwesome name="facebook" size={20} color="#4267B2" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.signupContainer}>
+            <Text style={styles.signupText}>Don't have an account?</Text>
+            <TouchableOpacity onPress={() => router.push('/registration')}>
+              <Text style={styles.signupLink}>Sign up</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </LinearGradient>
@@ -126,125 +115,121 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    padding: 25,
+    padding: 24,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
+  content: {
+    flex: 1,
+    justifyContent: 'center',
   },
   logoContainer: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: 20,
-    borderRadius: 20,
-    marginBottom: 25,
+    alignItems: 'center',
+    marginBottom: 32,
   },
   title: {
-    color: '#fff',
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    color: '#fff',
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
-    color: '#ccc',
     fontSize: 16,
+    color: 'rgba(255,255,255,0.7)',
+    marginBottom: 32,
+    textAlign: 'center',
   },
   formContainer: {
     width: '100%',
   },
-  inputGroup: {
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    color: '#fff',
+    fontSize: 14,
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 12,
-    marginBottom: 20,
-    paddingHorizontal: 15,
-    borderWidth: 1,
-    borderColor: 'transparent',
+    paddingHorizontal: 16,
+    height: 56,
   },
   inputFocused: {
-    borderColor: '#4cd964',
     backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    borderColor: '#4cd964',
   },
   input: {
     flex: 1,
-    height: 54,
+    height: '100%',
     color: '#fff',
-    paddingHorizontal: 15,
+    paddingHorizontal: 12,
     fontSize: 16,
-  },
-  icon: {
-    marginRight: 10,
-  },
-  eyeIcon: {
-    padding: 8,
-  },
-  loginButton: {
-    height: 54,
-    borderRadius: 12,
-    marginTop: 20,
-    overflow: 'hidden',
-  },
-  gradient: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    letterSpacing: 0.5,
-  },
-  optionsContainer: {
-    alignItems: 'flex-end',
-    marginTop: 15,
   },
   forgotPassword: {
+    alignSelf: 'flex-end',
+    marginBottom: 24,
+  },
+  forgotPasswordText: {
     color: '#4cd964',
     fontSize: 14,
   },
-  signupContainer: {
-    flexDirection: 'row',
+  primaryButton: {
+    backgroundColor: '#4cd964',
+    height: 56,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 30,
+    marginBottom: 24,
   },
-  signupText: {
-    color: '#ccc',
-    marginRight: 8,
+  primaryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
-  signupButton: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#4cd964',
-  },
-  signupButtonText: {
-    color: '#4cd964',
-    fontWeight: 'bold',
-  },
-  socialLoginContainer: {
+  dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 30,
+    marginBottom: 24,
   },
-  divider: {
+  dividerLine: {
     flex: 1,
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  socialText: {
-    color: '#ccc',
-    marginHorizontal: 15,
+  dividerText: {
+    color: 'rgba(255,255,255,0.7)',
     fontSize: 12,
+    marginHorizontal: 12,
   },
-  socialIconsContainer: {
+  socialButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 25,
+    gap: 16,
+    marginBottom: 32,
   },
-  socialIcon: {
+  socialButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: 15,
-    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  signupContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  signupText: {
+    color: 'rgba(255,255,255,0.7)',
+  },
+  signupLink: {
+    color: '#4cd964',
+    fontWeight: '600',
   },
 });

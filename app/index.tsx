@@ -1,3 +1,4 @@
+import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -7,36 +8,37 @@ export default function Index() {
 
   return (
     <LinearGradient colors={['#1e3c72', '#2a5298']} style={styles.container}>
-      <View style={styles.header}>
-        {/* <FontAwesome name="walle" size={80} color="#4cd964" /> */}
+      <View style={styles.content}>
+        <View style={styles.logoContainer}>
+          {/* <FontAwesome name="wallet" size={60} color="#4cd964" /> */}
+        </View>
+        
         <Text style={styles.title}>JK Wallet</Text>
-        <Text style={styles.subtitle}>Manage your finances with ease</Text>
-      </View>
+        <Text style={styles.subtitle}>Welcom to Your smart financial companion</Text>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => router.push('/login')}
-        >
-          <LinearGradient
-            colors={['#4cd964', '#2ecc71']}
-            style={styles.gradient}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity 
+            style={styles.button}
+            onPress={() => router.push('/login')}
           >
-            <Text style={styles.buttonText}>Login</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+            <LinearGradient
+              colors={['#4cd964', '#2ecc71']}
+              style={styles.gradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Text style={styles.buttonText}>Get Started</Text>
+              <FontAwesome name="arrow-right" size={18} color="#fff" style={styles.buttonIcon} />
+            </LinearGradient>
+          </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => router.push('/registration')}
-        >
-          <LinearGradient
-            colors={['#3498db', '#2980b9']}
-            style={styles.gradient}
+          <TouchableOpacity 
+            style={styles.secondaryButton}
+            onPress={() => router.push('/registration')}
           >
-            <Text style={styles.buttonText}>Create Account</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+            <Text style={styles.secondaryButtonText}>Create Account</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </LinearGradient>
   );
@@ -45,48 +47,73 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 25,
+  },
+  content: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
   },
-  header: {
+  logoContainer: {
+    backgroundColor: 'rgba(76, 217, 100, 0.1)',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 60,
+    marginBottom: 30,
   },
   title: {
-    fontSize: 36,
-    fontWeight: 'bold',
+    fontSize: 32,
+    fontWeight: '800',
     color: '#fff',
-    marginTop: 20,
+    marginBottom: 8,
+    letterSpacing: 0.5,
   },
   subtitle: {
-    fontSize: 18,
-    color: '#ccc',
-    marginTop: 10,
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.7)',
+    marginBottom: 40,
   },
   buttonContainer: {
     width: '100%',
+    alignItems: 'center',
   },
   button: {
     width: '100%',
-    height: 54,
-    borderRadius: 27,
+    height: 60,
+    borderRadius: 30,
     marginBottom: 20,
     overflow: 'hidden',
   },
   gradient: {
     flex: 1,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 30,
   },
   buttonText: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    marginRight: 10,
+  },
+  buttonIcon: {
+    marginLeft: 10,
+  },
+  secondaryButton: {
+    width: '100%',
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#4cd964',
+  },
+  secondaryButtonText: {
+    color: '#4cd964',
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
-
-// Add this in your Index component's return statement
-{/* <TouchableOpacity onPress={() => router.push('/login')}>
-  <Text style={{color: 'white'}}>Go to Login</Text>
-</TouchableOpacity> */}
