@@ -13,22 +13,25 @@ import { Text, TouchableOpacity, View } from "react-native";
 // In your ICONS object, change the Post icon to:
 const ICONS: Record<string, (color: string) => React.ReactNode> = {
   index: (color: string) => <FontAwesome name="home" size={24} color={color} />,
-  post: (color: string) => <Entypo name="plus" size={40} color={color} />,
-  Task: (color: string) => <Feather name="clipboard" size={24} color={color} />,
-  settings: (color: string) => (
+  categories: (color: string) => <Entypo name="plus" size={40} color={color} />,
+  transactions: (color: string) => <Feather name="clipboard" size={24} color={color} />,
+  settings: (color: string) => <Feather name="clipboard" size={24} color={color} />,
+  analytics: (color: string) => (
     <Feather name="settings" size={24} color={color} />
   ),
 };
 
 const FOCUSED_ICONS: Record<string, (color: string) => React.ReactNode> = {
   index: (color: string) => <Fontisto name="home" size={24} color={color} />,
-  Task: (color: string) => (
+  categories: (color: string) => (
     <Ionicons name="clipboard" size={24} color={color} />
   ),
-  post: (color: string) => <AntDesign name="plus" size={24} color={color} />,
+ 
+  trransactions: (color: string) => <AntDesign name="plus" size={24} color={color} />,
   settings: (color: string) => (
     <FontAwesome6 name="gear" size={24} color={color} />
   ),
+  analytics: (color: string) => <AntDesign name="plus" size={24} color={color} />,
 };
 
 const CustomBottomTabs = ({

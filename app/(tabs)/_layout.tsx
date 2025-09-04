@@ -9,24 +9,31 @@ const _layout = () => {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: "dashboard",
           headerShown: false,
         }}
       />
       <Tabs.Screen
-        name="post"
+        name="analylitics"
         options={{
-          title: "Post New Task",
+          title: "Analytics",
           headerShown: false,
         }}
       />
       <Tabs.Screen
-        name="Task"
+        name="categories"
         options={{
-          title: "My Tasks",
+          title: "categories",
           headerShown: false,
         }}
       />
+      <Tabs.Screen
+      name="transactions"
+      options={{
+        title: "transactions",
+        headerShown: false,
+      }}
+    />
       <Tabs.Screen
         name="settings"
         options={{
