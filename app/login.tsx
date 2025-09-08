@@ -1,41 +1,51 @@
-import { FontAwesome } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FontAwesome } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const router = useRouter();
 
   const handleLogin = () => {
-    router.push('/(tabs)');
+    router.push("/(tabs)");
   };
 
   return (
-    <LinearGradient colors={['#1e3c72', '#2a5298']} style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          {/* <FontAwesome name="wallet" size={50} color="#4cd964" /> */}
+          <FontAwesome name="credit-card" size={50} color="#6366f1" />
         </View>
-        
+
         <Text style={styles.title}>Welcome Back</Text>
         <Text style={styles.subtitle}>Sign in to your account</Text>
 
         <View style={styles.formContainer}>
           {/* Email Input */}
-          <View style={[styles.inputContainer, isEmailFocused && styles.inputFocused]}>
+          <View
+            style={[
+              styles.inputContainer,
+              isEmailFocused && styles.inputFocused,
+            ]}
+          >
             <Text style={styles.inputLabel}>Email Address</Text>
             <View style={styles.inputWrapper}>
-              <FontAwesome name="envelope" size={16} color="#4cd964" />
+              <FontAwesome name="envelope" size={16} color="#6366f1" />
               <TextInput
                 style={styles.input}
                 placeholder="Enter your email"
-                placeholderTextColor="#aaa"
+                placeholderTextColor="#666666"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -47,14 +57,19 @@ export default function Login() {
           </View>
 
           {/* Password Input */}
-          <View style={[styles.inputContainer, isPasswordFocused && styles.inputFocused]}>
+          <View
+            style={[
+              styles.inputContainer,
+              isPasswordFocused && styles.inputFocused,
+            ]}
+          >
             <Text style={styles.inputLabel}>Password</Text>
             <View style={styles.inputWrapper}>
-              <FontAwesome name="lock" size={16} color="#4cd964" />
+              <FontAwesome name="lock" size={16} color="#6366f1" />
               <TextInput
                 style={styles.input}
                 placeholder="Enter your password"
-                placeholderTextColor="#aaa"
+                placeholderTextColor="#666666"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -62,10 +77,10 @@ export default function Login() {
                 onBlur={() => setIsPasswordFocused(false)}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <FontAwesome 
-                  name={showPassword ? 'eye-slash' : 'eye'} 
-                  size={18} 
-                  color="#4cd964" 
+                <FontAwesome
+                  name={showPassword ? "eye-slash" : "eye"}
+                  size={18}
+                  color="#6366f1"
                 />
               </TouchableOpacity>
             </View>
@@ -75,161 +90,175 @@ export default function Login() {
             <Text style={styles.forgotPasswordText}>Forgot password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.primaryButton}
-            onPress={handleLogin}
-          >
+          <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}>
             <Text style={styles.primaryButtonText}>Sign In</Text>
           </TouchableOpacity>
 
-          <View style={styles.dividerContainer}>
+          {/* <View style={styles.dividerContainer}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>or continue with</Text>
             <View style={styles.dividerLine} />
-          </View>
+          </View> */}
 
-          <View style={styles.socialButtonsContainer}>
+          {/* <View style={styles.socialButtonsContainer}>
             <TouchableOpacity style={styles.socialButton}>
-              <FontAwesome name="google" size={20} color="#DB4437" />
+              <FontAwesome name="google" size={20} color="#ffffff" />
+              <Text style={styles.socialButtonText}>Google</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton}>
-              <FontAwesome name="apple" size={20} color="#000" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton}>
-              <FontAwesome name="facebook" size={20} color="#4267B2" />
-            </TouchableOpacity>
-          </View>
 
-          <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>Don't have an account?</Text>
-            <TouchableOpacity onPress={() => router.push('/registration')}>
-              <Text style={styles.signupLink}>Sign up</Text>
+            <TouchableOpacity style={styles.socialButton}>
+              <FontAwesome name="facebook" size={20} color="#ffffff" />
+              <Text style={styles.socialButtonText}>Facebook</Text>
+            </TouchableOpacity>
+          </View> */}
+
+          <View style={styles.registerContainer}>
+            <Text style={styles.registerText}>Don't have an account? </Text>
+            <TouchableOpacity onPress={() => router.push("/registration")}>
+              <Text style={styles.registerLink}>Sign up</Text>
             </TouchableOpacity>
           </View>
         </View>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
+    backgroundColor: "#1a1a1a", // Dark background
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 80,
+    paddingBottom: 40,
   },
   logoContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 32,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#fff',
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#ffffff",
+    textAlign: "center",
     marginBottom: 8,
-    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: 'rgba(255,255,255,0.7)',
-    marginBottom: 32,
-    textAlign: 'center',
+    color: "#a0a0a0",
+    textAlign: "center",
+    marginBottom: 40,
   },
   formContainer: {
-    width: '100%',
+    flex: 1,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   inputLabel: {
-    color: '#fff',
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#ffffff",
     marginBottom: 8,
-    fontWeight: '500',
   },
   inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#333333",
     borderRadius: 12,
     paddingHorizontal: 16,
-    height: 56,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: "#444444",
   },
   inputFocused: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderWidth: 1,
-    borderColor: '#4cd964',
+    borderColor: "#6366f1",
   },
   input: {
     flex: 1,
-    height: '100%',
-    color: '#fff',
-    paddingHorizontal: 12,
+    marginLeft: 12,
     fontSize: 16,
+    color: "#ffffff",
   },
   forgotPassword: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
     marginBottom: 24,
   },
   forgotPasswordText: {
-    color: '#4cd964',
+    color: "#6366f1",
     fontSize: 14,
+    fontWeight: "500",
   },
   primaryButton: {
-    backgroundColor: '#4cd964',
-    height: 56,
+    backgroundColor: "#6366f1",
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingVertical: 16,
+    alignItems: "center",
     marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
   primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "bold",
   },
   dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 24,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: "#444444",
   },
   dividerText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 12,
-    marginHorizontal: 12,
+    color: "#a0a0a0",
+    paddingHorizontal: 16,
+    fontSize: 14,
   },
   socialButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
+    flexDirection: "row",
+    gap: 12,
     marginBottom: 32,
   },
   socialButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  signupContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#333333",
+    borderRadius: 12,
+    paddingVertical: 16,
     gap: 8,
+    borderWidth: 1,
+    borderColor: "#444444",
   },
-  signupText: {
-    color: 'rgba(255,255,255,0.7)',
+  socialButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "500",
   },
-  signupLink: {
-    color: '#4cd964',
-    fontWeight: '600',
+  registerContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  registerText: {
+    color: "#a0a0a0",
+    fontSize: 16,
+  },
+  registerLink: {
+    color: "#6366f1",
+    fontSize: 16,
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
 });

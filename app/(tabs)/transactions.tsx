@@ -1,311 +1,505 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Colors } from "@/constants/Colors";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function Transactions() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('all');
-  const [activePaymentMethod, setActivePaymentMethod] = useState('card');
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "income" | "expense">(
+    "all"
+  );
 
+  const colors = isDarkMode ? Colors.dark : Colors.light;
+
+  // Mock transactions data
   const transactions = [
-    { id: '1', category: 'Salary', amount: 2500, date: '2023-06-01', type: 'income', icon: 'wallet', method: 'bank' },
-    { id: '2', category: 'Rent', amount: 800, date: '2023-06-05', type: 'expense', icon: 'home', method: 'card' },
-    { id: '3', category: 'Groceries', amount: 120, date: '2023-06-10', type: 'expense', icon: 'shopping-cart', method: 'mobile' },
-    { id: '4', category: 'Bitcoin Purchase', amount: 500, date: '2023-06-15', type: 'income', icon: 'bitcoin', method: 'crypto' },
+    {
+      id: "1",
+      name: "Grocery Shopping",
+      amount: -120,
+      category: "Food & Dining",
+      date: "2024-01-15",
+      type: "expense",
+    },
+    {
+      id: "2",
+      name: "Salary",
+      amount: 5000,
+      category: "Salary",
+      date: "2024-01-10",
+      type: "income",
+    },
+    {
+      id: "3",
+      name: "Gas Station",
+      amount: -45,
+      category: "Transportation",
+      date: "2024-01-14",
+      type: "expense",
+    },
+    {
+      id: "4",
+      name: "Netflix Subscription",
+      amount: -15,
+      category: "Entertainment",
+      date: "2024-01-13",
+      type: "expense",
+    },
+    {
+      id: "5",
+      name: "Freelance Project",
+      amount: 800,
+      category: "Freelance",
+      date: "2024-01-12",
+      type: "income",
+    },
+    {
+      id: "6",
+      name: "Restaurant",
+      amount: -65,
+      category: "Food & Dining",
+      date: "2024-01-11",
+      type: "expense",
+    },
+    {
+      id: "7",
+      name: "Investment Dividend",
+      amount: 150,
+      category: "Investment",
+      date: "2024-01-09",
+      type: "income",
+    },
+    {
+      id: "8",
+      name: "Shopping Mall",
+      amount: -200,
+      category: "Shopping",
+      date: "2024-01-08",
+      type: "expense",
+    },
   ];
 
-  const exchangeRates = [
-    { currency: 'USD', rate: 1.0, change: '+0.02%' },
-    { currency: 'EUR', rate: 0.92, change: '-0.15%' },
-    { currency: 'BTC', rate: 0.000032, change: '+1.2%' },
-  ];
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(Math.abs(amount));
+  };
 
-  const filteredTransactions = activeTab === 'all' 
-    ? transactions 
-    : transactions.filter(t => t.type === activeTab);
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
-  return (
-    <LinearGradient colors={['#1e3c72', '#2a5298']} style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Financial Transactions</Text>
-        
-        {/* Payment Method Selector */}
-        <View style={styles.paymentMethodContainer}>
-          {['card', 'mobile', 'crypto'].map((method) => (
-            <TouchableOpacity
-              key={method}
-              style={[styles.paymentMethodButton, activePaymentMethod === method && styles.activePaymentMethod]}
-              onPress={() => setActivePaymentMethod(method)}
-            >
-              <MaterialCommunityIcons 
-                name={
-                  method === 'card' ? 'credit-card' : 
-                  method === 'mobile' ? 'cellphone' : 'bitcoin'
-                } 
-                size={20} 
-                color={activePaymentMethod === method ? '#fff' : '#4a90e2'} 
-              />
-            </TouchableOpacity>
-          ))}
+  const getCategoryIcon = (category: string) => {
+    const iconMap: { [key: string]: string } = {
+      "Food & Dining": "restaurant",
+      Transportation: "car",
+      Shopping: "bag",
+      Entertainment: "game-controller",
+      Salary: "cash",
+      Freelance: "laptop",
+      Investment: "trending-up",
+      Healthcare: "medical",
+      Bills: "card",
+      Education: "school",
+    };
+    return iconMap[category] || "ellipsis-horizontal";
+  };
+
+  const getCategoryColor = (category: string) => {
+    const colorMap: { [key: string]: string } = {
+      "Food & Dining": "#ef4444",
+      Transportation: "#f59e0b",
+      Shopping: "#8b5cf6",
+      Entertainment: "#ec4899",
+      Salary: "#22c55e",
+      Freelance: "#3b82f6",
+      Investment: "#10b981",
+      Healthcare: "#06b6d4",
+      Bills: "#84cc16",
+      Education: "#f97316",
+    };
+    return colorMap[category] || "#6b7280";
+  };
+
+  const filteredTransactions = transactions.filter((transaction) => {
+    const matchesSearch =
+      transaction.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      transaction.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter =
+      filterType === "all" || transaction.type === filterType;
+    return matchesSearch && matchesFilter;
+  });
+
+  const renderTransaction = ({ item }: { item: any }) => (
+    <TouchableOpacity
+      style={[styles.transactionCard, { backgroundColor: colors.surface }]}
+    >
+      <View style={styles.transactionLeft}>
+        <View
+          style={[
+            styles.categoryIcon,
+            { backgroundColor: getCategoryColor(item.category) + "20" },
+          ]}
+        >
+          <Ionicons
+            name={getCategoryIcon(item.category) as any}
+            size={20}
+            color={getCategoryColor(item.category)}
+          />
+        </View>
+        <View style={styles.transactionInfo}>
+          <Text style={[styles.transactionName, { color: colors.text }]}>
+            {item.name}
+          </Text>
+          <Text
+            style={[
+              styles.transactionCategory,
+              { color: colors.textSecondary },
+            ]}
+          >
+            {item.category}
+          </Text>
+          <Text style={[styles.transactionDate, { color: colors.textMuted }]}>
+            {formatDate(item.date)}
+          </Text>
         </View>
       </View>
+      <View style={styles.transactionRight}>
+        <Text
+          style={[
+            styles.transactionAmount,
+            { color: item.amount > 0 ? colors.success : colors.danger },
+          ]}
+        >
+          {item.amount > 0 ? "+" : ""}
+          {formatCurrency(item.amount)}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
 
-      {/* Quick Actions */}
-      <View style={styles.quickActions}>
-        {['deposit', 'withdraw', 'transfer', 'exchange'].map((action) => (
-          <TouchableOpacity 
-            key={action}
-            style={styles.actionButton}
-            onPress={() => router.push}
-          >
-            <MaterialCommunityIcons 
-              name={
-                action === 'deposit' ? 'bank-plus' : 
-                action === 'withdraw' ? 'bank-minus' :
-                action === 'transfer' ? 'bank-transfer' : 'currency-usd'
-              } 
-              size={24} 
-              color="#4a90e2" 
-            />
-            <Text style={styles.actionText}>
-              {action === 'deposit' ? 'Deposit' : 
-               action === 'withdraw' ? 'Withdraw' :
-               action === 'transfer' ? 'Transfer' : 'Exchange'}
-            </Text>
-          </TouchableOpacity>
-        ))}
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Transactions
+        </Text>
+        <TouchableOpacity
+          style={[styles.themeToggle, { backgroundColor: colors.surface }]}
+          onPress={() => setIsDarkMode(!isDarkMode)}
+        >
+          <Ionicons
+            name={isDarkMode ? "sunny" : "moon"}
+            size={20}
+            color={colors.text}
+          />
+        </TouchableOpacity>
       </View>
 
-      {/* Exchange Rates */}
-      <View style={styles.exchangeContainer}>
-        <Text style={styles.sectionTitle}>Live Exchange Rates</Text>
-        {exchangeRates.map((rate) => (
-          <View key={rate.currency} style={styles.rateItem}>
-            <Text style={styles.currency}>{rate.currency}</Text>
-            <Text style={styles.rateValue}>{rate.rate}</Text>
-            <Text style={[
-              styles.rateChange,
-              rate.change.startsWith('exchange') ? styles.positive : styles.negative
-            ]}>
-              {rate.change}
+      {/* Search Bar */}
+      <View
+        style={[styles.searchContainer, { backgroundColor: colors.surface }]}
+      >
+        <Ionicons name="search" size={20} color={colors.textSecondary} />
+        <TextInput
+          style={[styles.searchInput, { color: colors.text }]}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search transactions..."
+          placeholderTextColor={colors.textMuted}
+        />
+      </View>
+
+      {/* Filter Tabs */}
+      <View style={styles.filterContainer}>
+        {[
+          { key: "all", label: "All", icon: "list" },
+          { key: "income", label: "Income", icon: "trending-up" },
+          { key: "expense", label: "Expenses", icon: "trending-down" },
+        ].map((filter) => (
+          <TouchableOpacity
+            key={filter.key}
+            style={[
+              styles.filterTab,
+              filterType === filter.key && { backgroundColor: colors.primary },
+            ]}
+            onPress={() => setFilterType(filter.key as any)}
+          >
+            <Ionicons
+              name={filter.icon as any}
+              size={16}
+              color={filterType === filter.key ? "#fff" : colors.textSecondary}
+            />
+            <Text
+              style={[
+                styles.filterText,
+                {
+                  color:
+                    filterType === filter.key ? "#fff" : colors.textSecondary,
+                },
+              ]}
+            >
+              {filter.label}
             </Text>
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
 
       {/* Transactions List */}
       <FlatList
         data={filteredTransactions}
-        renderItem={({ item }) => (
-          <TouchableOpacity 
-            style={styles.transactionCard}
-            onPress={() => router.push}
-          >
-            <View style={styles.transactionHeader}>
-              <View style={[
-                styles.iconContainer,
-                // item.type === 'income' ? styles.incomeBg : styles.expenseBg,
-                // styles[item.method]
-              ]}>
-                {/* <MaterialCommunityIcons 
-                  name={item.icon} 
-                  size={20} 
-                  color={item.type === 'income' ? '#4CAF50' : '#F44336'} 
-                /> */}
-              </View>
-              <View style={styles.transactionInfo}>
-                <Text style={styles.category}>{item.category}</Text>
-                <Text style={styles.date}>{item.date}</Text>
-              </View>
-            </View>
-            <Text style={[styles.amount, item.type === 'income' ? styles.income : styles.expense]}>
-              {item.type === 'income' ? '+' : '-'}${item.amount.toFixed(2)}
+        renderItem={renderTransaction}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.listContainer, { paddingBottom: 120 }]}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons
+              name="document-text-outline"
+              size={64}
+              color={colors.textMuted}
+            />
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              No transactions found
             </Text>
-          </TouchableOpacity>
-        )}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContainer}
+            <Text style={[styles.emptySubtext, { color: colors.textMuted }]}>
+              Try adjusting your search or filters
+            </Text>
+          </View>
+        }
       />
-    </LinearGradient>
+
+      {/* Summary */}
+      <View style={[styles.summaryCard, { backgroundColor: colors.surface }]}>
+        <View style={styles.summaryRow}>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+            Total Income:
+          </Text>
+          <Text style={[styles.summaryAmount, { color: colors.success }]}>
+            {formatCurrency(
+              filteredTransactions
+                .filter((t) => t.amount > 0)
+                .reduce((sum, t) => sum + t.amount, 0)
+            )}
+          </Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+            Total Expenses:
+          </Text>
+          <Text style={[styles.summaryAmount, { color: colors.danger }]}>
+            {formatCurrency(
+              Math.abs(
+                filteredTransactions
+                  .filter((t) => t.amount < 0)
+                  .reduce((sum, t) => sum + t.amount, 0)
+              )
+            )}
+          </Text>
+        </View>
+        <View style={[styles.summaryRow, styles.summaryTotal]}>
+          <Text style={[styles.summaryLabel, { color: colors.text }]}>
+            Net:
+          </Text>
+          <Text
+            style={[
+              styles.summaryAmount,
+              {
+                color:
+                  filteredTransactions.reduce((sum, t) => sum + t.amount, 0) >=
+                  0
+                    ? colors.success
+                    : colors.danger,
+              },
+            ]}
+          >
+            {formatCurrency(
+              filteredTransactions.reduce((sum, t) => sum + t.amount, 0)
+            )}
+          </Text>
+        </View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
   header: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 16,
-  },
-  paymentMethodContainer: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 12,
-    padding: 8,
-    justifyContent: 'space-around',
-  },
-  paymentMethodButton: {
-    padding: 12,
-    borderRadius: 12,
-  },
-  activePaymentMethod: {
-    backgroundColor: '#4a90e2',
-  },
-  quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  actionButton: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  actionText: {
-    marginTop: 8,
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: '500',
-  },
-  exchangeContainer: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 12,
-  },
-  rateItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-  },
-  currency: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-    width: 60,
-  },
-  rateValue: {
-    flex: 1,
-    fontSize: 16,
-    color: '#fff',
-  },
-  rateChange: {
-    fontSize: 14,
-    fontWeight: '600',
-    width: 80,
-    textAlign: 'right',
-  },
-  positive: {
-    color: '#4cd964',
-  },
-  negative: {
-    color: '#ff6b6b',
-  },
-  listContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 60,
     paddingBottom: 20,
   },
-  transactionCard: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
   },
-  iconContainer: {
+  themeToggle: {
+    padding: 12,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 20,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 16,
+  },
+  filterContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    gap: 8,
+  },
+  filterTab: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  filterText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 100,
+  },
+  transactionCard: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  transactionLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  categoryIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
-  },
-  incomeBg: {
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-  },
-  expenseBg: {
-    backgroundColor: 'rgba(244, 67, 54, 0.1)',
-  },
-  card: {
-    borderWidth: 1,
-    borderColor: '#4a90e2',
-  },
-  mobile: {
-    borderWidth: 1,
-    borderColor: '#ff6b6b',
-  },
-  crypto: {
-    borderWidth: 1,
-    borderColor: '#f7931a',
-  },
-  bank: {
-    borderWidth: 1,
-    borderColor: '#4cd964',
-  },
-  transactionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   transactionInfo: {
     flex: 1,
   },
-  category: {
+  transactionName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: "600",
+    marginBottom: 4,
   },
-  date: {
+  transactionCategory: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: 4,
+    marginBottom: 2,
   },
-  amount: {
+  transactionDate: {
+    fontSize: 12,
+  },
+  transactionRight: {
+    alignItems: "flex-end",
+  },
+  transactionAmount: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
-  income: {
-    color: '#4CAF50',
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
   },
-  expense: {
-    color: '#F44336',
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: 16,
+    marginBottom: 8,
   },
-  fab: {
-    position: 'absolute',
-    right: 20,
+  emptySubtext: {
+    fontSize: 14,
+    textAlign: "center",
+  },
+  summaryCard: {
+    position: "absolute",
     bottom: 20,
-    backgroundColor: '#4a90e2',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    left: 20,
+    right: 20,
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  summaryTotal: {
+    borderTopWidth: 1,
+    borderTopColor: "#e2e8f0",
+    paddingTop: 12,
+    marginTop: 8,
+  },
+  summaryLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  summaryAmount: {
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

@@ -1,345 +1,427 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
+import { Colors } from "@/constants/Colors";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function Categories() {
   const router = useRouter();
-  const [selectedPeriod, setSelectedPeriod] = ('M');
-  const [categories, setCategories] = ([
-    { id: '1', name: 'Housing', icon: 'home', budget: 800, spent: 750, period: 'M' },
-    { id: '2', name: 'Food', icon: 'food', budget: 400, spent: 420, period: 'W' },
-    { id: '3', name: 'Transport', icon: 'car', budget: 200, spent: 180, period: 'M' },
-    { id: '4', name: 'Utilities', icon: 'lightbulb', budget: 150, spent: 140, period: 'M' },
-    { id: '5', name: 'Entertainment', icon: 'gamepad', budget: 100, spent: 85, period: 'M' },
-    { id: '6', name: 'Health', icon: 'medkit', budget: 120, spent: 95, period: 'M' },
-  ]);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [transactionType, setTransactionType] = useState<"income" | "expense">(
+    "expense"
+  );
+  const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
 
-  const getProgressPercentage = (spent: number, budget: number) => {
-    return Math.min((spent / budget) * 100, 100);
-  };
+  const colors = isDarkMode ? Colors.dark : Colors.light;
 
-  const periodOptions = [
-    { id: 'H', name: 'Hourly', icon: 'clock' },
-    { id: 'D', name: 'Daily', icon: 'calendar-day' },
-    { id: 'W', name: 'Weekly', icon: 'calendar-week' },
-    { id: 'M', name: 'Monthly', icon: 'calendar-month' },
-    { id: 'Y', name: 'Yearly', icon: 'calendar' },
+  const expenseCategories = [
+    { id: "1", name: "Food & Dining", icon: "restaurant", color: "#ef4444" },
+    { id: "2", name: "Transportation", icon: "car", color: "#f59e0b" },
+    { id: "3", name: "Shopping", icon: "bag", color: "#8b5cf6" },
+    {
+      id: "4",
+      name: "Entertainment",
+      icon: "game-controller",
+      color: "#ec4899",
+    },
+    { id: "5", name: "Healthcare", icon: "medical", color: "#06b6d4" },
+    { id: "6", name: "Bills", icon: "card", color: "#84cc16" },
+    { id: "7", name: "Education", icon: "school", color: "#f97316" },
+    { id: "8", name: "Other", icon: "ellipsis-horizontal", color: "#6b7280" },
   ];
 
-  const handleAddCategory = () => {
-    // Add your category creation logic here
-    router.push('/newcategory');
-  };
+  const incomeCategories = [
+    { id: "1", name: "Salary", icon: "cash", color: "#22c55e" },
+    { id: "2", name: "Freelance", icon: "laptop", color: "#3b82f6" },
+    { id: "3", name: "Investment", icon: "trending-up", color: "#10b981" },
+    { id: "4", name: "Gift", icon: "gift", color: "#f59e0b" },
+    { id: "5", name: "Other", icon: "ellipsis-horizontal", color: "#6b7280" },
+  ];
 
-  // Add swipe to delete functionality
-  const renderRightActions = (progress: any, dragX: any, id: string) => {
-    return (
-      <TouchableOpacity 
-        style={styles.deleteContainer}
-        onPress={() => {
-          Alert.alert(
-            "Confirm Delete",
-            "Are you sure you want to delete this category?",
-            [
-              { text: "Cancel", style: "cancel" },
-              { text: "Delete" }
-            ]
-          );
-        }}
-      >
-        <MaterialCommunityIcons name="trash-can" size={24} color="#fff" />
-      </TouchableOpacity>
+  const handleSave = () => {
+    if (!amount || !description || !selectedCategory) {
+      Alert.alert("Missing Information", "Please fill in all fields");
+      return;
+    }
+
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      Alert.alert("Invalid Amount", "Please enter a valid amount");
+      return;
+    }
+
+    // Here you would save the transaction to your state management
+    Alert.alert(
+      "Success!",
+      `${
+        transactionType === "income" ? "Income" : "Expense"
+      } added successfully`,
+      [
+        {
+          text: "OK",
+          onPress: () => {
+            setAmount("");
+            setDescription("");
+            setSelectedCategory("");
+            router.back();
+          },
+        },
+      ]
     );
   };
 
+  const categories =
+    transactionType === "income" ? incomeCategories : expenseCategories;
+
   return (
-    <LinearGradient colors={['#1e3c72', '#2a5298']} style={styles.container}>
-      {/* Enhanced Header */}
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.title}>Budget Categories</Text>
-          <TouchableOpacity style={styles.languageButton}>
-            <MaterialCommunityIcons name="earth" size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity style={styles.aiButton}>
-          <MaterialCommunityIcons name="robot-happy" size={24} color="#fff" />
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Add Transaction
+        </Text>
+        <TouchableOpacity
+          style={[styles.themeToggle, { backgroundColor: colors.surface }]}
+          onPress={() => setIsDarkMode(!isDarkMode)}
+        >
+          <Ionicons
+            name={isDarkMode ? "sunny" : "moon"}
+            size={20}
+            color={colors.text}
+          />
         </TouchableOpacity>
       </View>
 
-      {/* Period Selector with Animation */}
-      <View style={styles.periodContainer}>
-        {periodOptions.map((period) => (
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Transaction Type Toggle */}
+        <View style={[styles.typeToggle, { backgroundColor: colors.surface }]}>
           <TouchableOpacity
-            key={period.id}
             style={[
-              styles.periodButton,
-              selectedPeriod === period.id && styles.periodButtonActive
+              styles.typeButton,
+              transactionType === "expense" && {
+                backgroundColor: colors.danger,
+              },
             ]}
-            onPress={() => setSelectedPeriod(period.id)}
+            onPress={() => setTransactionType("expense")}
           >
-            {/* <MaterialCommunityIcons 
-              name={period.icon} 
-              size={20} 
-              color={selectedPeriod === period.id ? '#fff' : '#4cd964'} 
-            /> */}
-            <Text style={[
-              styles.periodText,
-              selectedPeriod === period.id && styles.periodTextActive
-            ]}>
-              {period.name}
+            <Ionicons
+              name="remove-circle"
+              size={20}
+              color={transactionType === "expense" ? "#fff" : colors.danger}
+            />
+            <Text
+              style={[
+                styles.typeButtonText,
+                {
+                  color: transactionType === "expense" ? "#fff" : colors.danger,
+                },
+              ]}
+            >
+              Expense
             </Text>
           </TouchableOpacity>
-        ))}
-      </View>
 
-      {/* Enhanced Add Button */}
-      <TouchableOpacity 
-        style={styles.addButton}
-        onPress={handleAddCategory}
-      >
-        <LinearGradient
-          colors={['#4cd964', '#2ecc71']}
-          style={styles.gradient}
-        >
-          <MaterialCommunityIcons name="plus-circle" size={24} color="#fff" />
-          <Text style={styles.addButtonText}>New Category</Text>
-        </LinearGradient>
-      </TouchableOpacity>
-
-      {/* Swipeable Categories List */}
-      <FlatList
-        data={categories || []}
-        renderItem={({ item }) => (
-          <Swipeable
-            renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item.id)}
+          <TouchableOpacity
+            style={[
+              styles.typeButton,
+              transactionType === "income" && {
+                backgroundColor: colors.success,
+              },
+            ]}
+            onPress={() => setTransactionType("income")}
           >
-            <View style={styles.categoryCard}>
-              <View style={styles.categoryHeader}>
-                <LinearGradient
-                  colors={['#4a90e2', '#2a5298']}
-                  style={styles.categoryIcon}
+            <Ionicons
+              name="add-circle"
+              size={20}
+              color={transactionType === "income" ? "#fff" : colors.success}
+            />
+            <Text
+              style={[
+                styles.typeButtonText,
+                {
+                  color: transactionType === "income" ? "#fff" : colors.success,
+                },
+              ]}
+            >
+              Income
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Amount Input */}
+        <View
+          style={[styles.inputSection, { backgroundColor: colors.surface }]}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Amount
+          </Text>
+          <View style={styles.amountInput}>
+            <Text
+              style={[styles.currencySymbol, { color: colors.textSecondary }]}
+            >
+              $
+            </Text>
+            <TextInput
+              style={[styles.amountTextInput, { color: colors.text }]}
+              value={amount}
+              onChangeText={setAmount}
+              placeholder="0.00"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="numeric"
+            />
+          </View>
+        </View>
+
+        {/* Description Input */}
+        <View
+          style={[styles.inputSection, { backgroundColor: colors.surface }]}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Description
+          </Text>
+          <TextInput
+            style={[
+              styles.textInput,
+              {
+                color: colors.text,
+                borderColor: colors.border,
+                backgroundColor: colors.background,
+              },
+            ]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="What was this for?"
+            placeholderTextColor={colors.textMuted}
+            multiline
+          />
+        </View>
+
+        {/* Category Selection */}
+        <View
+          style={[styles.inputSection, { backgroundColor: colors.surface }]}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Category
+          </Text>
+          <View style={styles.categoriesGrid}>
+            {categories.map((category) => (
+              <TouchableOpacity
+                key={category.id}
+                style={[
+                  styles.categoryCard,
+                  selectedCategory === category.id && {
+                    backgroundColor: category.color + "20",
+                    borderColor: category.color,
+                  },
+                ]}
+                onPress={() => setSelectedCategory(category.id)}
+              >
+                <View
+                  style={[
+                    styles.categoryIcon,
+                    { backgroundColor: category.color + "20" },
+                  ]}
                 >
-                  <MaterialCommunityIcons name={item.icon} size={24} color="#fff" />
-                </LinearGradient>
-                <View style={styles.categoryInfo}>
-                  <Text style={styles.categoryName}>{item.name}</Text>
-                  <Text style={styles.categoryPeriod}>
-                    {item.period === 'H' ? 'Hourly' : 
-                     item.period === 'D' ? 'Daily' :
-                     item.period === 'W' ? 'Weekly' :
-                     item.period === 'M' ? 'Monthly' : 'Yearly'}
-                  </Text>
-                </View>
-              </View>
-              
-              {/* Progress Bar with Animation */}
-              <View style={styles.progressContainer}>
-                <View style={styles.progressBar}>
-                  <LinearGradient
-                    colors={item.spent > item.budget ? ['#ff6b6b', '#ff5252'] : ['#4cd964', '#2ecc71']}
-                    style={[
-                      styles.progressFill,
-                      { width: `${getProgressPercentage(item.spent, item.budget)}%` }
-                    ]}
+                  <Ionicons
+                    name={category.icon as any}
+                    size={20}
+                    color={category.color}
                   />
                 </View>
-                <Text style={styles.percentageText}>
-                  {Math.round(getProgressPercentage(item.spent, item.budget))}%
+                <Text style={[styles.categoryName, { color: colors.text }]}>
+                  {category.name}
                 </Text>
-              </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
-              <View style={styles.budgetInfo}>
-                <Text style={styles.spentText}>${item.spent}</Text>
-                <Text style={styles.budgetText}>/ ${item.budget}</Text>
-              </View>
-            </View>
-          </Swipeable>
-        )}
-        keyExtractor={item => item.id}
-        numColumns={2}
-        contentContainerStyle={styles.listContainer}
-      />
-    </LinearGradient>
+        {/* Save Button */}
+        <TouchableOpacity
+          style={[
+            styles.saveButton,
+            {
+              backgroundColor:
+                transactionType === "income" ? colors.success : colors.danger,
+            },
+          ]}
+          onPress={handleSave}
+        >
+          <Text style={styles.saveButtonText}>Save Transaction</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
   },
-  languageButton: {
-    marginLeft: 12,
-    padding: 8,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  aiButton: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: 8,
-    borderRadius: 20,
-  },
-  periodContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 16,
-    padding: 8,
-  },
-  periodButton: {
-    flex: 1,
+  themeToggle: {
     padding: 12,
     borderRadius: 12,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginHorizontal: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  periodButtonActive: {
-    backgroundColor: '#4cd964',
+  scrollView: {
+    flex: 1,
+    paddingHorizontal: 20,
   },
-  periodText: {
-    fontSize: 14,
-    marginLeft: 8,
-    color: '#4cd964',
-    fontWeight: '600',
+  scrollContent: {
+    paddingBottom: 40, // Add padding to the bottom of the scroll view
   },
-  periodTextActive: {
-    color: '#fff',
+  typeToggle: {
+    flexDirection: "row",
+    borderRadius: 16,
+    padding: 4,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  typeButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    gap: 8,
+  },
+  typeButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  inputSection: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 16,
+  },
+  amountInput: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    backgroundColor: "#f8fafc",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  currencySymbol: {
+    fontSize: 32,
+    fontWeight: "bold",
+    marginRight: 8,
+  },
+  amountTextInput: {
+    flex: 1,
+    fontSize: 32,
+    fontWeight: "bold",
+  },
+  textInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    minHeight: 50,
+  },
+  categoriesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
   },
   categoryCard: {
-    flex: 1,
-    margin: 8,
+    width: "48%",
     padding: 16,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 16,
-    minWidth: '45%',
+    borderRadius: 12,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "transparent",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   categoryIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  deleteContainer: {
-    backgroundColor: '#ff6b6b',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 80,
-    margin: 8,
-    borderRadius: 16,
-  },
-  addButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    borderRadius: 30,
-    zIndex: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  gradient: {
-    padding: 16,
-    borderRadius: 30,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  listContainer: {
-    justifyContent: 'space-between',
-  },
-  categoryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  categoryInfo: {
-    marginLeft: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
   },
   categoryName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  categoryPeriod: {
-    fontSize: 12,
-    color: '#666',
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 8,
-  },
-  progressBar: {
-    flex: 1,
-    height: 6,
-    backgroundColor: '#eee',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginRight: 10,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  percentageText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#666',
-  },
-  budgetInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  spentText: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: '600',
-  },
-  budgetText: {
     fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
+    fontWeight: "500",
+    textAlign: "center",
   },
-  headerLeft: {},
-  addButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    marginLeft: 10,
-    fontSize: 16,
+  saveButton: {
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: "center",
+    marginTop: 24,
+    marginBottom: 40,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  removeButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(244, 67, 54, 0.1)',
-    padding: 8,
-    borderRadius: 20,
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+  saveButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });

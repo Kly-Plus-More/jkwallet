@@ -1,258 +1,564 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Calendar } from 'react-native-calendars';
+import { Colors } from "@/constants/Colors";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function Dashboard() {
   const router = useRouter();
-  const [darkMode, setDarkMode] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Add to existing data
-  const walletMetrics = [
-    { id: '1', title: 'Total Assets', value: '$12,450', change: '+2.4%', icon: 'wallet' },
-    { id: '2', title: 'Investment', value: '$4,230', change: '+1.2%', icon: 'chart-line' },
-    { id: '3', title: 'Crypto', value: '0.54 BTC', change: '-0.8%', icon: 'bitcoin' },
+  const colors = isDarkMode ? Colors.dark : Colors.light;
+
+  // Mock data - in a real app, this would come from your state management
+  const budgetData = {
+    totalIncome: 5000,
+    totalExpenses: 3200,
+    remaining: 1800,
+    monthlyBudget: 4000,
+  };
+
+  const recentTransactions = [
+    {
+      id: "1",
+      name: "Grocery Shopping",
+      amount: -120,
+      category: "Food",
+      date: "Today",
+    },
+    {
+      id: "2",
+      name: "Salary",
+      amount: 5000,
+      category: "Income",
+      date: "Yesterday",
+    },
+    {
+      id: "3",
+      name: "Gas Station",
+      amount: -45,
+      category: "Transport",
+      date: "2 days ago",
+    },
+    {
+      id: "4",
+      name: "Netflix Subscription",
+      amount: -15,
+      category: "Entertainment",
+      date: "3 days ago",
+    },
   ];
 
+  const quickActions = [
+    {
+      id: "1",
+      title: "Add Income",
+      icon: "add-circle",
+      color: "#22c55e",
+      onPress: () => router.push("/categories"),
+    },
+    {
+      id: "2",
+      title: "Add Expense",
+      icon: "remove-circle",
+      color: "#ef4444",
+      onPress: () => router.push("/categories"),
+    },
+    {
+      id: "3",
+      title: "Set Budget",
+      icon: "calculator",
+      color: "#6366f1",
+      onPress: () => router.push("/add budget"),
+    },
+    {
+      id: "4",
+      title: "View Reports",
+      icon: "analytics",
+      color: "#f59e0b",
+      onPress: () => router.push("/analytics"),
+    },
+  ];
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(Math.abs(amount));
+  };
+
+  const getProgressPercentage = () => {
+    return Math.min(
+      (budgetData.totalExpenses / budgetData.monthlyBudget) * 100,
+      100
+    );
+  };
+
   return (
-    <LinearGradient colors={darkMode ? ['#0f0f0f', '#1a1a1a'] : ['#f5f7fa', '#c3cfe2']} style={styles.container}>
-      {/* Enhanced Header */}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <MaterialCommunityIcons name="wallet" size={32} color="#4a90e2" />
-          <Text style={[styles.title, darkMode && styles.darkText]}>JK Wallet</Text>
+        <View>
+          <Text style={[styles.greeting, { color: colors.text }]}>
+            Good morning!
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Let's track your budget
+          </Text>
         </View>
-        <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.themeToggle} onPress={() => setDarkMode(!darkMode)}>
-            <MaterialCommunityIcons 
-              name={darkMode ? 'weather-night' : 'white-balance-sunny'} 
-              size={24} 
-              color={darkMode ? '#fff' : '#4a90e2'} 
-            />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.aiButton} onPress={() => router.push('/ai')}>
-            <MaterialCommunityIcons name="robot" size={24} color={darkMode ? '#fff' : '#4a90e2'} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[styles.themeToggle, { backgroundColor: colors.surface }]}
+          onPress={() => setIsDarkMode(!isDarkMode)}
+        >
+          <Ionicons
+            name={isDarkMode ? "sunny" : "moon"}
+            size={20}
+            color={colors.text}
+          />
+        </TouchableOpacity>
       </View>
 
-      {/* Wallet Metrics */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.metricsContainer}>
-        {walletMetrics.map((metric) => (
-          <LinearGradient
-            key={metric.id}
-            colors={darkMode ? ['#2a2a2a', '#1a1a1a'] : ['#fff', '#f8f9fa']}
-            style={[styles.metricCard, darkMode && styles.darkCard]}
-          >
-            {/* <MaterialCommunityIcons 
-              name={metric.icon} 
-              size={24} 
-              color={metric.change.startsWith('+') ? '#4cd964' : '#F44336'} 
-            /> */}
-            <Text style={[styles.metricTitle, darkMode && styles.darkText]}>{metric.title}</Text>
-            <Text style={styles.metricValue}>{metric.value}</Text>
-            <Text style={[
-              styles.metricChange ,
-              // metric.change.startsWith('+') ? styles.positive : styles.negative
-            ]}>
-              {metric.change}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Balance Card */}
+        <View style={[styles.balanceCard, { backgroundColor: colors.surface }]}>
+          <View style={styles.balanceHeader}>
+            <Text
+              style={[styles.balanceLabel, { color: colors.textSecondary }]}
+            >
+              Total Balance
             </Text>
-          </LinearGradient>
-        ))}
+            <TouchableOpacity>
+              <Text style={[styles.viewDetails, { color: colors.primary }]}>
+                View Details
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.balanceAmount, { color: colors.text }]}>
+            {formatCurrency(budgetData.remaining)}
+          </Text>
+
+          {/* Budget Progress */}
+          <View style={styles.budgetProgress}>
+            <View style={styles.progressHeader}>
+              <Text
+                style={[styles.progressLabel, { color: colors.textSecondary }]}
+              >
+                Monthly Budget
+              </Text>
+              <Text style={[styles.progressAmount, { color: colors.text }]}>
+                {formatCurrency(budgetData.totalExpenses)} /{" "}
+                {formatCurrency(budgetData.monthlyBudget)}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.progressBar,
+                { backgroundColor: colors.borderLight },
+              ]}
+            >
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${getProgressPercentage()}%`,
+                    backgroundColor:
+                      getProgressPercentage() > 80 ? "#ef4444" : "#6366f1",
+                  },
+                ]}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Quick Actions
+          </Text>
+          <View style={styles.quickActionsGrid}>
+            {quickActions.map((action) => (
+              <TouchableOpacity
+                key={action.id}
+                style={[styles.actionCard, { backgroundColor: colors.surface }]}
+                onPress={action.onPress}
+              >
+                <View
+                  style={[
+                    styles.actionIcon,
+                    { backgroundColor: action.color + "20" },
+                  ]}
+                >
+                  <Ionicons
+                    name={action.icon as any}
+                    size={24}
+                    color={action.color}
+                  />
+                </View>
+                <Text style={[styles.actionTitle, { color: colors.text }]}>
+                  {action.title}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Income vs Expenses */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            This Month
+          </Text>
+          <View style={styles.statsContainer}>
+            <View
+              style={[styles.statCard, { backgroundColor: colors.surface }]}
+            >
+              <View
+                style={[styles.statIcon, { backgroundColor: "#22c55e" + "20" }]}
+              >
+                <Ionicons name="trending-up" size={20} color="#22c55e" />
+              </View>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Income
+              </Text>
+              <Text style={[styles.statAmount, { color: "#22c55e" }]}>
+                {formatCurrency(budgetData.totalIncome)}
+              </Text>
+            </View>
+
+            <View
+              style={[styles.statCard, { backgroundColor: colors.surface }]}
+            >
+              <View
+                style={[styles.statIcon, { backgroundColor: "#ef4444" + "20" }]}
+              >
+                <Ionicons name="trending-down" size={20} color="#ef4444" />
+              </View>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Expenses
+              </Text>
+              <Text style={[styles.statAmount, { color: "#ef4444" }]}>
+                {formatCurrency(budgetData.totalExpenses)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Recent Transactions */}
+        <View style={styles.section}>
+          <View style={styles.transactionsHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Recent Transactions
+            </Text>
+            <TouchableOpacity onPress={() => router.push("/transactions")}>
+              <Text style={[styles.viewAll, { color: colors.primary }]}>
+                View All
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View
+            style={[
+              styles.transactionsContainer,
+              { backgroundColor: colors.surface },
+            ]}
+          >
+            {recentTransactions.map((transaction) => (
+              <TouchableOpacity
+                key={transaction.id}
+                style={styles.transactionItem}
+              >
+                <View style={styles.transactionLeft}>
+                  <View
+                    style={[
+                      styles.categoryIcon,
+                      {
+                        backgroundColor:
+                          transaction.amount > 0
+                            ? "#22c55e" + "20"
+                            : "#ef4444" + "20",
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={
+                        transaction.amount > 0 ? "trending-up" : "trending-down"
+                      }
+                      size={16}
+                      color={transaction.amount > 0 ? "#22c55e" : "#ef4444"}
+                    />
+                  </View>
+                  <View style={styles.transactionInfo}>
+                    <Text
+                      style={[styles.transactionName, { color: colors.text }]}
+                    >
+                      {transaction.name}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.transactionCategory,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      {transaction.category}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.transactionRight}>
+                  <Text
+                    style={[
+                      styles.transactionAmount,
+                      {
+                        color: transaction.amount > 0 ? "#22c55e" : "#ef4444",
+                      },
+                    ]}
+                  >
+                    {transaction.amount > 0 ? "+" : ""}
+                    {formatCurrency(transaction.amount)}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.transactionDate,
+                      { color: colors.textMuted },
+                    ]}
+                  >
+                    {transaction.date}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
       </ScrollView>
-
-      {/* Enhanced Balance Card */}
-      <LinearGradient colors={['#4a90e2', '#2a5298']} style={styles.balanceCard}>
-        <View style={styles.balanceHeader}>
-          <Text style={styles.balanceLabel}>Total Balance</Text>
-          <TouchableOpacity onPress={() => router.push}>
-            <Text style={styles.viewDetails}>View Details</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.balanceAmount}>$5,280.50</Text>
-        
-        {/* Add Financial Health Indicator */}
-        <View style={styles.healthIndicator}>
-          <Text style={styles.healthText}>Financial Health: Excellent</Text>
-          <MaterialCommunityIcons name="heart-pulse" size={20} color="#4cd964" />
-        </View>
-      </LinearGradient>
-
-      {/* Interactive Tabs */}
-      <View style={[styles.tabContainer, darkMode && styles.darkTabContainer]}>
-        {['overview', 'analytics', 'markets'].map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            style={[styles.tabButton, activeTab === tab && styles.activeTab]}
-            onPress={() => setActiveTab(tab)}
-          >
-            <Text style={[styles.tabText, darkMode && styles.darkText]}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Enhanced Calendar */}
-      <Calendar
-        style={[styles.calendar, darkMode && styles.darkCalendar]}
-        theme={{
-          ...(darkMode ? {
-            backgroundColor: '#1a1a1a',
-            calendarBackground: '#1a1a1a',
-            textSectionTitleColor: '#888',
-            selectedDayBackgroundColor: '#4a90e2',
-            selectedDayTextColor: '#fff',
-            todayTextColor: '#4cd964',
-            dayTextColor: '#fff',
-          } : {})
-        }}
-      />
-
-      {/* Rest of the components with dark mode styles ... */}
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#f5f7fa',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  title: {
+  greeting: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
   },
-  languageButton: {
-    marginLeft: 12,
-    backgroundColor: '#4a90e210',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-// from here and up
-  aiButton: {
-    backgroundColor: '#4a90e210',
-    padding: 8,
-    borderRadius: 20,
-  },
-
-  balanceCard: {
-    backgroundColor: '#4a90e2',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-  },
-  balanceLabel: {
+  subtitle: {
     fontSize: 16,
-    color: 'rgba(255,255,255,0.8)',
-    marginBottom: 8,
+    marginTop: 4,
   },
-  balanceAmount: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 16,
-  },
- 
-
-  calendar: {
+  themeToggle: {
+    padding: 12,
     borderRadius: 12,
-    marginTop: 8,
-  },
-
-  // Add new styles
-  darkText: {
-    color: '#fff',
-  },
-  darkCard: {
-    backgroundColor: '#2a2a2a',
-    shadowColor: '#000',
-  },
-  metricsContainer: {
-    marginBottom: 16,
-  },
-  metricCard: {
-    width: 160,
-    padding: 16,
-    borderRadius: 16,
-    marginRight: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  metricTitle: {
-    fontSize: 14,
-    color: '#666',
-    marginVertical: 8,
+  scrollView: {
+    flex: 1,
+    paddingHorizontal: 20,
   },
-  metricValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+  scrollContent: {
+    paddingBottom: 120, // Add extra padding to prevent tab navigator overlap
   },
-  metricChange: {
-    fontSize: 12,
-    marginTop: 4,
+  balanceCard: {
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  healthIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 16,
-    padding: 8,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 12,
-  },
-  healthText: {
-    color: '#fff',
-    marginRight: 8,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 16,
+  balanceHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
-  darkTabContainer: {
-    backgroundColor: '#2a2a2a',
+  balanceLabel: {
+    fontSize: 16,
   },
-  tabButton: {
-    flex: 1,
-    padding: 16,
-    alignItems: 'center',
+  viewDetails: {
+    fontSize: 14,
+    fontWeight: "600",
   },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#4a90e2',
+  balanceAmount: {
+    fontSize: 36,
+    fontWeight: "bold",
+    marginBottom: 20,
   },
-  darkCalendar: {
-    backgroundColor: '#1a1a1a',
+  budgetProgress: {
+    marginTop: 16,
+  },
+  progressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  progressLabel: {
+    fontSize: 14,
+  },
+  progressAmount: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 16,
+  },
+  quickActionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  actionCard: {
+    width: "48%",
+    padding: 20,
     borderRadius: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  themeToggle: {},
-balanceHeader: {},
-viewDetails: {},
-tabText: {},
+  actionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  actionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  statsContainer: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    padding: 20,
+    borderRadius: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  statIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  statLabel: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  statAmount: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  transactionsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  viewAll: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  transactionsContainer: {
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  transactionItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+  transactionLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  categoryIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  transactionInfo: {
+    flex: 1,
+  },
+  transactionName: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  transactionCategory: {
+    fontSize: 14,
+  },
+  transactionRight: {
+    alignItems: "flex-end",
+  },
+  transactionAmount: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 2,
+  },
+  transactionDate: {
+    fontSize: 12,
+  },
 });
