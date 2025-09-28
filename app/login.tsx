@@ -1,7 +1,10 @@
 import { FontAwesome } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   StyleSheet,
   Text,
   TextInput,
@@ -15,10 +18,86 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleLogin = () => {
-    router.push("/(tabs)");
+  const validateForm = () => {
+    if (!email.trim()) {
+      setError("Email is required");
+      return false;
+    }
+    if (!email.includes("@")) {
+      setError("Please enter a valid email address");
+      return false;
+    }
+    if (!password.trim()) {
+      setError("Password is required");
+      return false;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return false;
+    }
+    return true;
+  };
+
+  const handleLogin = async () => {
+    setError("");
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("http://192.168.1.81:1010/Loginuser", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      // Debug: Log the response data to see what fields are available
+      console.log("Login response data:", data);
+
+      if (response.ok) {
+        // Login successful - store user data
+        const userData = {
+          user_id: data.user_id || data.id || data.userid,
+          email: email.trim(),
+          username:
+            data.username || data.name || data.email?.split("@")[0] || "User",
+        };
+
+        // Debug: Log the user data being stored
+        console.log("Storing user data:", userData);
+
+        await AsyncStorage.setItem("userData", JSON.stringify(userData));
+
+        Alert.alert("Success", "Login successful!", [
+          {
+            text: "OK",
+            onPress: () => router.push("/(tabs)"),
+          },
+        ]);
+      } else {
+        // Login failed
+        setError(data.message || "Login failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -86,12 +165,32 @@ export default function Login() {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.forgotPassword}>
+          <TouchableOpacity
+            style={styles.forgotPassword}
+            onPress={() => router.push("/forgot-password")}
+          >
             <Text style={styles.forgotPasswordText}>Forgot password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}>
-            <Text style={styles.primaryButtonText}>Sign In</Text>
+          {error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
+
+          <TouchableOpacity
+            style={[
+              styles.primaryButton,
+              isLoading && styles.primaryButtonDisabled,
+            ]}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#ffffff" size="small" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Sign In</Text>
+            )}
           </TouchableOpacity>
 
           {/* <View style={styles.dividerContainer}>
@@ -208,6 +307,22 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  primaryButtonDisabled: {
+    backgroundColor: "#4a4a4a",
+    opacity: 0.6,
+  },
+  errorContainer: {
+    backgroundColor: "#ff4444",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: "#ffffff",
+    fontSize: 14,
+    textAlign: "center",
   },
   dividerContainer: {
     flexDirection: "row",

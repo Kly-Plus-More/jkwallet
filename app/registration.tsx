@@ -3,6 +3,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -19,13 +21,93 @@ export default function Registration() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const colors = isDarkMode ? Colors.dark : Colors.light;
 
-  const handleRegister = () => {
-    router.replace("/(tabs)");
+  const validateForm = () => {
+    if (!username.trim()) {
+      setError("Username is required");
+      return false;
+    }
+    if (!email.trim()) {
+      setError("Email is required");
+      return false;
+    }
+    if (!email.includes("@")) {
+      setError("Please enter a valid email address");
+      return false;
+    }
+    if (!phoneNumber.trim()) {
+      setError("Phone number is required");
+      return false;
+    }
+    if (phoneNumber.length !== 10 || !phoneNumber.startsWith("07")) {
+      setError("Phone number must be 10 digits and start with '07'");
+      return false;
+    }
+    if (!password.trim()) {
+      setError("Password is required");
+      return false;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return false;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return false;
+    }
+    return true;
+  };
+
+  const handleRegister = async () => {
+    setError("");
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("http://192.168.1.81:1010/Createuser", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username.trim(),
+          email: email.trim(),
+          phoneNumber: phoneNumber.trim(),
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Registration successful
+        Alert.alert("Success", "Account created successfully!", [
+          {
+            text: "OK",
+            onPress: () => router.push("/login"),
+          },
+        ]);
+      } else {
+        // Registration failed
+        setError(data.message || "Registration failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -124,6 +206,33 @@ export default function Registration() {
             </View>
           </View>
 
+          {/* Phone Number Input */}
+          <View style={styles.inputSection}>
+            <Text style={[styles.inputLabel, { color: "#ffffff" }]}>
+              Phone Number
+            </Text>
+            <View
+              style={[
+                styles.inputContainer,
+                {
+                  backgroundColor: "#333333",
+                  borderColor: "#444444",
+                },
+              ]}
+            >
+              <Ionicons name="call" size={20} color="#a0a0a0" />
+              <TextInput
+                style={[styles.input, { color: "#ffffff" }]}
+                placeholder="07XXXXXXXX"
+                placeholderTextColor="#666666"
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                keyboardType="phone-pad"
+                maxLength={10}
+              />
+            </View>
+          </View>
+
           {/* Password Input */}
           <View style={styles.inputSection}>
             <Text style={[styles.inputLabel, { color: "#ffffff" }]}>
@@ -183,12 +292,27 @@ export default function Registration() {
             </View>
           </View>
 
+          {error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
+
           {/* Register Button */}
           <TouchableOpacity
-            style={[styles.registerButton, { backgroundColor: "#6366f1" }]}
+            style={[
+              styles.registerButton,
+              { backgroundColor: "#6366f1" },
+              isLoading && styles.registerButtonDisabled,
+            ]}
             onPress={handleRegister}
+            disabled={isLoading}
           >
-            <Text style={styles.registerButtonText}>Create Account</Text>
+            {isLoading ? (
+              <ActivityIndicator color="#ffffff" size="small" />
+            ) : (
+              <Text style={styles.registerButtonText}>Create Account</Text>
+            )}
           </TouchableOpacity>
 
           {/* Login Link */}
@@ -293,6 +417,22 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  registerButtonDisabled: {
+    backgroundColor: "#4a4a4a",
+    opacity: 0.6,
+  },
+  errorContainer: {
+    backgroundColor: "#ff4444",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: "#ffffff",
+    fontSize: 14,
+    textAlign: "center",
   },
   loginText: {
     textAlign: "center",

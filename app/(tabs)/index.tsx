@@ -1,8 +1,10 @@
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,8 +15,59 @@ import {
 export default function Dashboard() {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
 
   const colors = isDarkMode ? Colors.dark : Colors.light;
+
+  useEffect(() => {
+    // Load user data from AsyncStorage
+    const loadUserData = async () => {
+      try {
+        const storedUserData = await AsyncStorage.getItem("userData");
+        console.log("Stored user data from AsyncStorage:", storedUserData);
+
+        if (storedUserData) {
+          const parsedUserData = JSON.parse(storedUserData);
+          console.log("Parsed user data:", parsedUserData);
+          setUserData(parsedUserData);
+        } else {
+          // If no user data found, redirect to login
+          console.log("No user data found, redirecting to login");
+          Alert.alert("Session Expired", "Please log in again", [
+            {
+              text: "OK",
+              onPress: () => router.replace("/login"),
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+        router.replace("/login");
+      }
+    };
+    loadUserData();
+  }, []);
+
+  const handleLogout = async () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await AsyncStorage.removeItem("userData");
+            router.replace("/login");
+          } catch (error) {
+            console.error("Error during logout:", error);
+          }
+        },
+      },
+    ]);
+  };
 
   // Mock data - in a real app, this would come from your state management
   const budgetData = {
@@ -106,22 +159,36 @@ export default function Dashboard() {
       <View style={styles.header}>
         <View>
           <Text style={[styles.greeting, { color: colors.text }]}>
-            Good morning!
+            Good morning
+            {userData?.username
+              ? `, ${userData.username}`
+              : userData?.email
+              ? `, ${userData.email.split("@")[0]}`
+              : ""}
+            !
           </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Let's track your budget
           </Text>
         </View>
-        <TouchableOpacity
-          style={[styles.themeToggle, { backgroundColor: colors.surface }]}
-          onPress={() => setIsDarkMode(!isDarkMode)}
-        >
-          <Ionicons
-            name={isDarkMode ? "sunny" : "moon"}
-            size={20}
-            color={colors.text}
-          />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={[styles.themeToggle, { backgroundColor: colors.surface }]}
+            onPress={() => setIsDarkMode(!isDarkMode)}
+          >
+            <Ionicons
+              name={isDarkMode ? "sunny" : "moon"}
+              size={20}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.logoutButton, { backgroundColor: colors.surface }]}
+            onPress={handleLogout}
+          >
+            <Ionicons name="log-out-outline" size={20} color={colors.text} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -362,7 +429,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 4,
   },
+  headerActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
   themeToggle: {
+    padding: 12,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  logoutButton: {
     padding: 12,
     borderRadius: 12,
     shadowColor: "#000",

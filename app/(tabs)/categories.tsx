@@ -1,8 +1,10 @@
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -23,8 +25,35 @@ export default function Categories() {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [userData, setUserData] = useState<any>(null);
 
   const colors = isDarkMode ? Colors.dark : Colors.light;
+
+  useEffect(() => {
+    // Load user data from AsyncStorage
+    const loadUserData = async () => {
+      try {
+        const storedUserData = await AsyncStorage.getItem("userData");
+        if (storedUserData) {
+          setUserData(JSON.parse(storedUserData));
+        } else {
+          // If no user data found, redirect to login
+          Alert.alert("Session Expired", "Please log in again", [
+            {
+              text: "OK",
+              onPress: () => router.replace("/login"),
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+        router.replace("/login");
+      }
+    };
+    loadUserData();
+  }, []);
 
   const expenseCategories = [
     { id: "1", name: "Food & Dining", icon: "restaurant", color: "#ef4444" },
@@ -50,36 +79,94 @@ export default function Categories() {
     { id: "5", name: "Other", icon: "ellipsis-horizontal", color: "#6b7280" },
   ];
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setError("");
+
+    if (!userData) {
+      setError("User not authenticated. Please log in again.");
+      return;
+    }
+
     if (!amount || !description || !selectedCategory) {
-      Alert.alert("Missing Information", "Please fill in all fields");
+      setError("Please fill in all fields");
       return;
     }
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      Alert.alert("Invalid Amount", "Please enter a valid amount");
+      setError("Please enter a valid amount");
       return;
     }
 
-    // Here you would save the transaction to your state management
-    Alert.alert(
-      "Success!",
-      `${
-        transactionType === "income" ? "Income" : "Expense"
-      } added successfully`,
-      [
-        {
-          text: "OK",
-          onPress: () => {
-            setAmount("");
-            setDescription("");
-            setSelectedCategory("");
-            router.back();
-          },
+    setIsLoading(true);
+
+    try {
+      // Get the selected category name
+      const categories =
+        transactionType === "income" ? incomeCategories : expenseCategories;
+      const selectedCategoryData = categories.find(
+        (cat) => cat.id === selectedCategory
+      );
+
+      const requestBody = {
+        user_id: userData.user_id,
+        amount: numAmount,
+        description: description.trim(),
+        category: selectedCategoryData?.name || "Other",
+        date: new Date().toISOString(),
+      };
+
+      // Debug: Log the request body being sent
+      console.log("Sending request body:", requestBody);
+      console.log("User data:", userData);
+
+      const endpoint =
+        transactionType === "income"
+          ? "http://192.168.1.81:1010/income"
+          : "http://192.168.1.81:1010/expense";
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      ]
-    );
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Transaction saved successfully
+        Alert.alert(
+          "Success!",
+          `${
+            transactionType === "income" ? "Income" : "Expense"
+          } added successfully`,
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                setAmount("");
+                setDescription("");
+                setSelectedCategory("");
+                setError("");
+                router.back();
+              },
+            },
+          ]
+        );
+      } else {
+        // Transaction save failed
+        setError(
+          data.message || `Failed to add ${transactionType}. Please try again.`
+        );
+      }
+    } catch (error) {
+      console.error("Transaction save error:", error);
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const categories =
@@ -258,6 +345,12 @@ export default function Categories() {
           </View>
         </View>
 
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
         {/* Save Button */}
         <TouchableOpacity
           style={[
@@ -266,10 +359,16 @@ export default function Categories() {
               backgroundColor:
                 transactionType === "income" ? colors.success : colors.danger,
             },
+            isLoading && styles.saveButtonDisabled,
           ]}
           onPress={handleSave}
+          disabled={isLoading}
         >
-          <Text style={styles.saveButtonText}>Save Transaction</Text>
+          {isLoading ? (
+            <ActivityIndicator color="#ffffff" size="small" />
+          ) : (
+            <Text style={styles.saveButtonText}>Save Transaction</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -423,5 +522,20 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
+  },
+  errorContainer: {
+    backgroundColor: "#ff4444",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: "#ffffff",
+    fontSize: 14,
+    textAlign: "center",
   },
 });
