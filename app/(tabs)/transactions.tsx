@@ -1,8 +1,11 @@
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -11,6 +14,15 @@ import {
   View,
 } from "react-native";
 
+interface Transaction {
+  id: string;
+  name: string;
+  amount: number;
+  category: string;
+  date: string;
+  type: "income" | "expense";
+}
+
 export default function Transactions() {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -18,76 +30,73 @@ export default function Transactions() {
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">(
     "all"
   );
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const colors = isDarkMode ? Colors.dark : Colors.light;
 
-  // Mock transactions data
-  const transactions = [
-    {
-      id: "1",
-      name: "Grocery Shopping",
-      amount: -120,
-      category: "Food & Dining",
-      date: "2024-01-15",
-      type: "expense",
-    },
-    {
-      id: "2",
-      name: "Salary",
-      amount: 5000,
-      category: "Salary",
-      date: "2024-01-10",
-      type: "income",
-    },
-    {
-      id: "3",
-      name: "Gas Station",
-      amount: -45,
-      category: "Transportation",
-      date: "2024-01-14",
-      type: "expense",
-    },
-    {
-      id: "4",
-      name: "Netflix Subscription",
-      amount: -15,
-      category: "Entertainment",
-      date: "2024-01-13",
-      type: "expense",
-    },
-    {
-      id: "5",
-      name: "Freelance Project",
-      amount: 800,
-      category: "Freelance",
-      date: "2024-01-12",
-      type: "income",
-    },
-    {
-      id: "6",
-      name: "Restaurant",
-      amount: -65,
-      category: "Food & Dining",
-      date: "2024-01-11",
-      type: "expense",
-    },
-    {
-      id: "7",
-      name: "Investment Dividend",
-      amount: 150,
-      category: "Investment",
-      date: "2024-01-09",
-      type: "income",
-    },
-    {
-      id: "8",
-      name: "Shopping Mall",
-      amount: -200,
-      category: "Shopping",
-      date: "2024-01-08",
-      type: "expense",
-    },
-  ];
+  const fetchAllTransactions = async () => {
+    try {
+      const userDataStr = await AsyncStorage.getItem("userData");
+      const userData = userDataStr ? JSON.parse(userDataStr) : null;
+
+      if (!userData) {
+        throw new Error("User data not found");
+      }
+
+      // Try userid (from users table) first, then fallback to other common names
+      const userId =
+        userData.userid || userData.user_id || userData.userId || userData.id;
+
+      if (!userId) {
+        throw new Error("User ID not found in user data");
+      }
+
+      console.log("Fetching all transactions for user:", userId);
+
+      const response = await fetch(
+        `http://192.168.1.87:1010/api/transactions/all?user_id=${userId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Transactions API Error:", errorText);
+        throw new Error(`Failed to fetch transactions: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(
+        "Transactions API response count:",
+        data.transactions?.length || 0
+      );
+
+      setTransactions(data.transactions || []);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      Alert.alert("Error", "Failed to load transactions");
+      // Keep empty array on error
+      setTransactions([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchAllTransactions();
+  };
+
+  useEffect(() => {
+    fetchAllTransactions();
+  }, []);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -108,15 +117,19 @@ export default function Transactions() {
   const getCategoryIcon = (category: string) => {
     const iconMap: { [key: string]: string } = {
       "Food & Dining": "restaurant",
+      Food: "restaurant",
       Transportation: "car",
+      Transport: "car",
       Shopping: "bag",
       Entertainment: "game-controller",
       Salary: "cash",
+      Income: "cash",
       Freelance: "laptop",
       Investment: "trending-up",
       Healthcare: "medical",
       Bills: "card",
       Education: "school",
+      Other: "ellipsis-horizontal",
     };
     return iconMap[category] || "ellipsis-horizontal";
   };
@@ -124,15 +137,19 @@ export default function Transactions() {
   const getCategoryColor = (category: string) => {
     const colorMap: { [key: string]: string } = {
       "Food & Dining": "#ef4444",
+      Food: "#ef4444",
       Transportation: "#f59e0b",
+      Transport: "#f59e0b",
       Shopping: "#8b5cf6",
       Entertainment: "#ec4899",
       Salary: "#22c55e",
+      Income: "#22c55e",
       Freelance: "#3b82f6",
       Investment: "#10b981",
       Healthcare: "#06b6d4",
       Bills: "#84cc16",
       Education: "#f97316",
+      Other: "#6b7280",
     };
     return colorMap[category] || "#6b7280";
   };
@@ -146,7 +163,7 @@ export default function Transactions() {
     return matchesSearch && matchesFilter;
   });
 
-  const renderTransaction = ({ item }: { item: any }) => (
+  const renderTransaction = ({ item }: { item: Transaction }) => (
     <TouchableOpacity
       style={[styles.transactionCard, { backgroundColor: colors.surface }]}
     >
@@ -184,20 +201,43 @@ export default function Transactions() {
         <Text
           style={[
             styles.transactionAmount,
-            { color: item.amount > 0 ? colors.success : colors.danger },
+            { color: item.type === "income" ? colors.success : colors.danger },
           ]}
         >
-          {item.amount > 0 ? "+" : ""}
+          {item.type === "income" ? "+" : "-"}
           {formatCurrency(item.amount)}
         </Text>
       </View>
     </TouchableOpacity>
   );
 
+  if (loading) {
+    return (
+      <View
+        style={[
+          styles.container,
+          styles.loadingContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.text }]}>
+          Loading transactions...
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>
           Transactions
         </Text>
@@ -225,6 +265,11 @@ export default function Transactions() {
           placeholder="Search transactions..."
           placeholderTextColor={colors.textMuted}
         />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery("")}>
+            <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Filter Tabs */}
@@ -262,6 +307,14 @@ export default function Transactions() {
         ))}
       </View>
 
+      {/* Transactions Count */}
+      <View style={styles.countContainer}>
+        <Text style={[styles.countText, { color: colors.textSecondary }]}>
+          Showing {filteredTransactions.length} of {transactions.length}{" "}
+          transactions
+        </Text>
+      </View>
+
       {/* Transactions List */}
       <FlatList
         data={filteredTransactions}
@@ -269,6 +322,8 @@ export default function Transactions() {
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.listContainer, { paddingBottom: 120 }]}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons
@@ -277,10 +332,14 @@ export default function Transactions() {
               color={colors.textMuted}
             />
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              No transactions found
+              {transactions.length === 0
+                ? "No transactions yet"
+                : "No transactions found"}
             </Text>
             <Text style={[styles.emptySubtext, { color: colors.textMuted }]}>
-              Try adjusting your search or filters
+              {transactions.length === 0
+                ? "Add your first income or expense to get started"
+                : "Try adjusting your search or filters"}
             </Text>
           </View>
         }
@@ -295,7 +354,7 @@ export default function Transactions() {
           <Text style={[styles.summaryAmount, { color: colors.success }]}>
             {formatCurrency(
               filteredTransactions
-                .filter((t) => t.amount > 0)
+                .filter((t) => t.type === "income")
                 .reduce((sum, t) => sum + t.amount, 0)
             )}
           </Text>
@@ -306,11 +365,9 @@ export default function Transactions() {
           </Text>
           <Text style={[styles.summaryAmount, { color: colors.danger }]}>
             {formatCurrency(
-              Math.abs(
-                filteredTransactions
-                  .filter((t) => t.amount < 0)
-                  .reduce((sum, t) => sum + t.amount, 0)
-              )
+              filteredTransactions
+                .filter((t) => t.type === "expense")
+                .reduce((sum, t) => sum + t.amount, 0)
             )}
           </Text>
         </View>
@@ -323,15 +380,22 @@ export default function Transactions() {
               styles.summaryAmount,
               {
                 color:
-                  filteredTransactions.reduce((sum, t) => sum + t.amount, 0) >=
-                  0
+                  filteredTransactions.reduce(
+                    (sum, t) =>
+                      t.type === "income" ? sum + t.amount : sum - t.amount,
+                    0
+                  ) >= 0
                     ? colors.success
                     : colors.danger,
               },
             ]}
           >
             {formatCurrency(
-              filteredTransactions.reduce((sum, t) => sum + t.amount, 0)
+              filteredTransactions.reduce(
+                (sum, t) =>
+                  t.type === "income" ? sum + t.amount : sum - t.amount,
+                0
+              )
             )}
           </Text>
         </View>
@@ -344,6 +408,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -351,6 +423,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
+  },
+  backButton: {
+    padding: 8,
   },
   headerTitle: {
     fontSize: 24,
@@ -382,12 +457,13 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     marginLeft: 12,
+    marginRight: 8,
     fontSize: 16,
   },
   filterContainer: {
     flexDirection: "row",
     paddingHorizontal: 20,
-    marginBottom: 16,
+    marginBottom: 12,
     gap: 8,
   },
   filterTab: {
@@ -401,6 +477,13 @@ const styles = StyleSheet.create({
   filterText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  countContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  countText: {
+    fontSize: 14,
   },
   listContainer: {
     paddingHorizontal: 20,

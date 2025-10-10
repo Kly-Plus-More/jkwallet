@@ -43,7 +43,7 @@ export default function ForgotPassword() {
       // Save email to AsyncStorage for use in other pages
       await AsyncStorage.setItem("resetEmail", email.trim());
 
-      const response = await fetch("http://192.168.1.81:1010/RequestReset", {
+      const response = await fetch("http://192.168.1.69:1010/RequestReset", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

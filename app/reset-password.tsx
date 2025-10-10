@@ -71,7 +71,7 @@ export default function ResetPassword() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://192.168.1.81:1010/ResetPassword", {
+      const response = await fetch("http://192.168.1.69:1010/ResetPassword", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

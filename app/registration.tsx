@@ -75,7 +75,7 @@ export default function Registration() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://192.168.1.81:1010/Createuser", {
+      const response = await fetch("http://192.168.1.69:1010/Createuser", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

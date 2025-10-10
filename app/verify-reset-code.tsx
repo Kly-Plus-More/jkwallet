@@ -60,7 +60,7 @@ export default function VerifyResetCode() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://192.168.1.81:1010/ResetCode", {
+      const response = await fetch("http://192.168.1.69:1010/ResetCode", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -98,7 +98,7 @@ export default function VerifyResetCode() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://192.168.1.81:1010/RequestReset", {
+      const response = await fetch("http://192.168.1.69:1010/RequestReset", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

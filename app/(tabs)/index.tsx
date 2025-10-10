@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -12,15 +13,160 @@ import {
   View,
 } from "react-native";
 
+interface Transaction {
+  id: string;
+  name: string;
+  amount: number;
+  category: string;
+  date: string;
+  type: "income" | "expense";
+}
+
 export default function Dashboard() {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+  const [budgetData, setBudgetData] = useState({
+    totalIncome: 0,
+    totalExpenses: 0,
+    remaining: 0,
+    monthlyBudget: 0,
+  });
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>(
+    []
+  );
+  const [loading, setLoading] = useState(true);
 
   const colors = isDarkMode ? Colors.dark : Colors.light;
 
+  const fetchUserBalance = async () => {
+    try {
+      const userDataStr = await AsyncStorage.getItem("userData");
+      const userData = userDataStr ? JSON.parse(userDataStr) : null;
+
+      console.log("User data structure:", userData);
+
+      if (!userData) {
+        throw new Error("User data not found");
+      }
+
+      // Try userid (from users table) first, then fallback to other common names
+      const userId =
+        userData.userid || userData.user_id || userData.userId || userData.id;
+
+      if (!userId) {
+        console.log("Available properties in userData:", Object.keys(userData));
+        throw new Error("User ID not found in user data");
+      }
+
+      console.log("Using user ID:", userId);
+
+      // Fetch balance data
+      const balanceResponse = await fetch(
+        `http://192.168.1.87:1010/api/balance?user_id=${userId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!balanceResponse.ok) {
+        const errorText = await balanceResponse.text();
+        console.error("Balance API Error Response:", errorText);
+        throw new Error(`Server error: ${balanceResponse.status}`);
+      }
+
+      const balanceData = await balanceResponse.json();
+      console.log("Balance API response:", balanceData);
+
+      // Fetch monthly budget (now uses current month's income)
+      const budgetResponse = await fetch(
+        `http://192.168.1.87:1010/api/budget?user_id=${userId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      let monthlyBudget = 4000; // Default fallback
+      if (budgetResponse.ok) {
+        const budgetData = await budgetResponse.json();
+        monthlyBudget = budgetData.monthlyBudget || 4000;
+        console.log("Monthly budget from API:", monthlyBudget);
+      } else {
+        console.log("Budget API failed, using default");
+      }
+
+      // Fetch recent transactions
+      const transactionsResponse = await fetch(
+        `http://192.168.1.87:1010/api/transactions/recent?user_id=${userId}&limit=5`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      let transactions: Transaction[] = [];
+      if (transactionsResponse.ok) {
+        const transactionsData = await transactionsResponse.json();
+        transactions = transactionsData.transactions || [];
+        console.log("Recent transactions from API:", transactions);
+      } else {
+        console.log("Transactions API failed, using empty array");
+        // Fallback to mock data if API fails
+        transactions = [
+          {
+            id: "1",
+            name: "No transactions yet",
+            amount: 0,
+            category: "Add your first transaction",
+            date: new Date().toISOString(),
+            type: "income",
+          },
+        ];
+      }
+
+      setBudgetData({
+        totalIncome: balanceData.totalIncome || 0,
+        totalExpenses: balanceData.totalExpenses || 0,
+        remaining: balanceData.remaining || 0,
+        monthlyBudget: monthlyBudget,
+      });
+      console.log("Final budget data being set:", {
+        totalIncome: balanceData.totalIncome || 0,
+        totalExpenses: balanceData.totalExpenses || 0,
+        remaining: balanceData.remaining || 0,
+        monthlyBudget: monthlyBudget,
+      });
+      setRecentTransactions(transactions);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to load dashboard data"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  ////////////
+  // In your fetchUserBalance function, after setting the state:
+
+  // And add this useEffect to debug state changes
   useEffect(() => {
-    // Load user data from AsyncStorage
+    console.log("Budget data state updated:", budgetData);
+    console.log("Recent transactions state updated:", recentTransactions);
+  }, [budgetData, recentTransactions]);
+  /////////
+
+  useEffect(() => {
     const loadUserData = async () => {
       try {
         const storedUserData = await AsyncStorage.getItem("userData");
@@ -29,9 +175,14 @@ export default function Dashboard() {
         if (storedUserData) {
           const parsedUserData = JSON.parse(storedUserData);
           console.log("Parsed user data:", parsedUserData);
+          console.log("User ID:", parsedUserData.userid);
+          console.log("All keys:", Object.keys(parsedUserData));
+
           setUserData(parsedUserData);
+
+          // Fetch all dashboard data after user data is loaded
+          await fetchUserBalance();
         } else {
-          // If no user data found, redirect to login
           console.log("No user data found, redirecting to login");
           Alert.alert("Session Expired", "Please log in again", [
             {
@@ -47,6 +198,17 @@ export default function Dashboard() {
     };
     loadUserData();
   }, []);
+
+  // Refresh data when returning to dashboard
+  // useEffect(() => {
+  //   const unsubscribe = router.addListener("focus", () => {
+  //     if (userData) {
+  //       fetchUserBalance();
+  //     }
+  //   });
+
+  //   return unsubscribe;
+  // }, [router, userData]);
 
   const handleLogout = async () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -68,45 +230,6 @@ export default function Dashboard() {
       },
     ]);
   };
-
-  // Mock data - in a real app, this would come from your state management
-  const budgetData = {
-    totalIncome: 5000,
-    totalExpenses: 3200,
-    remaining: 1800,
-    monthlyBudget: 4000,
-  };
-
-  const recentTransactions = [
-    {
-      id: "1",
-      name: "Grocery Shopping",
-      amount: -120,
-      category: "Food",
-      date: "Today",
-    },
-    {
-      id: "2",
-      name: "Salary",
-      amount: 5000,
-      category: "Income",
-      date: "Yesterday",
-    },
-    {
-      id: "3",
-      name: "Gas Station",
-      amount: -45,
-      category: "Transport",
-      date: "2 days ago",
-    },
-    {
-      id: "4",
-      name: "Netflix Subscription",
-      amount: -15,
-      category: "Entertainment",
-      date: "3 days ago",
-    },
-  ];
 
   const quickActions = [
     {
@@ -146,12 +269,43 @@ export default function Dashboard() {
     }).format(Math.abs(amount));
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays === 0) return "Today";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
   const getProgressPercentage = () => {
+    if (budgetData.monthlyBudget === 0) return 0;
     return Math.min(
       (budgetData.totalExpenses / budgetData.monthlyBudget) * 100,
       100
     );
   };
+
+  if (loading) {
+    return (
+      <View
+        style={[
+          styles.container,
+          styles.loadingContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.text }]}>
+          Loading your finances...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -204,10 +358,8 @@ export default function Dashboard() {
             >
               Total Balance
             </Text>
-            <TouchableOpacity>
-              <Text style={[styles.viewDetails, { color: colors.primary }]}>
-                View Details
-              </Text>
+            <TouchableOpacity onPress={fetchUserBalance}>
+              <Ionicons name="refresh" size={20} color={colors.primary} />
             </TouchableOpacity>
           </View>
           <Text style={[styles.balanceAmount, { color: colors.text }]}>
@@ -338,70 +490,103 @@ export default function Dashboard() {
               { backgroundColor: colors.surface },
             ]}
           >
-            {recentTransactions.map((transaction) => (
-              <TouchableOpacity
-                key={transaction.id}
-                style={styles.transactionItem}
-              >
-                <View style={styles.transactionLeft}>
-                  <View
-                    style={[
-                      styles.categoryIcon,
-                      {
-                        backgroundColor:
-                          transaction.amount > 0
-                            ? "#22c55e" + "20"
-                            : "#ef4444" + "20",
-                      },
-                    ]}
-                  >
-                    <Ionicons
-                      name={
-                        transaction.amount > 0 ? "trending-up" : "trending-down"
-                      }
-                      size={16}
-                      color={transaction.amount > 0 ? "#22c55e" : "#ef4444"}
-                    />
-                  </View>
-                  <View style={styles.transactionInfo}>
-                    <Text
-                      style={[styles.transactionName, { color: colors.text }]}
+            {recentTransactions.length > 0 ? (
+              recentTransactions.map((transaction) => (
+                <TouchableOpacity
+                  key={transaction.id}
+                  style={styles.transactionItem}
+                >
+                  <View style={styles.transactionLeft}>
+                    <View
+                      style={[
+                        styles.categoryIcon,
+                        {
+                          backgroundColor:
+                            transaction.type === "income"
+                              ? "#22c55e" + "20"
+                              : "#ef4444" + "20",
+                        },
+                      ]}
                     >
-                      {transaction.name}
+                      <Ionicons
+                        name={
+                          transaction.type === "income"
+                            ? "trending-up"
+                            : "trending-down"
+                        }
+                        size={16}
+                        color={
+                          transaction.type === "income" ? "#22c55e" : "#ef4444"
+                        }
+                      />
+                    </View>
+                    <View style={styles.transactionInfo}>
+                      <Text
+                        style={[styles.transactionName, { color: colors.text }]}
+                      >
+                        {transaction.name}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.transactionCategory,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {transaction.category}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.transactionRight}>
+                    <Text
+                      style={[
+                        styles.transactionAmount,
+                        {
+                          color:
+                            transaction.type === "income"
+                              ? "#22c55e"
+                              : "#ef4444",
+                        },
+                      ]}
+                    >
+                      {transaction.type === "income" ? "+" : "-"}
+                      {formatCurrency(transaction.amount)}
                     </Text>
                     <Text
                       style={[
-                        styles.transactionCategory,
-                        { color: colors.textSecondary },
+                        styles.transactionDate,
+                        { color: colors.textMuted },
                       ]}
                     >
-                      {transaction.category}
+                      {formatDate(transaction.date)}
                     </Text>
                   </View>
-                </View>
-                <View style={styles.transactionRight}>
-                  <Text
-                    style={[
-                      styles.transactionAmount,
-                      {
-                        color: transaction.amount > 0 ? "#22c55e" : "#ef4444",
-                      },
-                    ]}
-                  >
-                    {transaction.amount > 0 ? "+" : ""}
-                    {formatCurrency(transaction.amount)}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.transactionDate,
-                      { color: colors.textMuted },
-                    ]}
-                  >
-                    {transaction.date}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.noTransactions}>
+                <Ionicons
+                  name="receipt-outline"
+                  size={48}
+                  color={colors.textMuted}
+                />
+                <Text
+                  style={[
+                    styles.noTransactionsText,
+                    { color: colors.textMuted },
+                  ]}
+                >
+                  No transactions yet
+                </Text>
+                <Text
+                  style={[
+                    styles.noTransactionsSubtext,
+                    { color: colors.textMuted },
+                  ]}
+                >
+                  Add your first income or expense to get started
+                </Text>
+              </View>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -412,6 +597,14 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
   },
   header: {
     flexDirection: "row",
@@ -456,7 +649,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   scrollContent: {
-    paddingBottom: 120, // Add extra padding to prevent tab navigator overlap
+    paddingBottom: 120,
   },
   balanceCard: {
     borderRadius: 20,
@@ -597,6 +790,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    minHeight: 200,
   },
   transactionItem: {
     flexDirection: "row",
@@ -640,5 +834,20 @@ const styles = StyleSheet.create({
   },
   transactionDate: {
     fontSize: 12,
+  },
+  noTransactions: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  noTransactionsText: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  noTransactionsSubtext: {
+    fontSize: 14,
+    textAlign: "center",
   },
 });

@@ -108,22 +108,42 @@ export default function Categories() {
         (cat) => cat.id === selectedCategory
       );
 
-      const requestBody = {
-        user_id: userData.user_id,
-        amount: numAmount,
-        description: description.trim(),
-        category: selectedCategoryData?.name || "Other",
-        date: new Date().toISOString(),
-      };
+      // Get user ID from userData (try different possible property names)
+      const userId =
+        userData.userid || userData.user_id || userData.userId || userData.id;
+
+      if (!userId) {
+        throw new Error("User ID not found in user data");
+      }
+
+      // Create different request bodies for income vs expense
+      let requestBody;
+      let endpoint;
+
+      if (transactionType === "income") {
+        endpoint = "http://192.168.1.87:1010/income";
+        requestBody = {
+          user_id: userId, // Use user_id for income
+          amount: numAmount,
+          description: description.trim(),
+          // Don't send category or date for income - backend doesn't expect them
+        };
+      } else {
+        endpoint = "http://192.168.1.87:1010/expense";
+        requestBody = {
+          user_id: userId, // Use user_id for expense
+          amount: numAmount,
+          description: description.trim(),
+          category: selectedCategoryData?.name || "Other",
+          // income_id is optional for expense, can be null
+          income_id: null,
+        };
+      }
 
       // Debug: Log the request body being sent
-      console.log("Sending request body:", requestBody);
-      console.log("User data:", userData);
-
-      const endpoint =
-        transactionType === "income"
-          ? "http://192.168.1.81:1010/income"
-          : "http://192.168.1.81:1010/expense";
+      console.log("Sending to endpoint:", endpoint);
+      console.log("Request body:", requestBody);
+      console.log("Transaction type:", transactionType);
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -157,8 +177,9 @@ export default function Categories() {
         );
       } else {
         // Transaction save failed
+        console.error("Backend error:", data);
         setError(
-          data.message || `Failed to add ${transactionType}. Please try again.`
+          data.error || `Failed to add ${transactionType}. Please try again.`
         );
       }
     } catch (error) {
